@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import AppLayout from './components/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lists from './pages/Lists';
+import ListDetail from './pages/ListDetail';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/app" element={<AppLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="lists" element={<Lists />} />
+          <Route path="lists/:listId" element={<ListDetail />} />
           {/* Default redirect to dashboard */}
           <Route index element={<Dashboard />} />
         </Route>

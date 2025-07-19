@@ -77,7 +77,7 @@ function Dropdown({ onEdit, onDelete }) {
             </button>
             <button
               onClick={handleDelete}
-              className="w-full px-4 py-2 text-left text-red-400 hover:bg-gradient-glass transition-all duration-300 flex items-center space-x-3 last:rounded-b-xl"
+              className="w-full px-4 py-2 text-left text-gray-400 hover:bg-gradient-glass transition-all duration-300 flex items-center space-x-3 last:rounded-b-xl"
               type="button"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

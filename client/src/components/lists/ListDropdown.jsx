@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const ListDropdown = ({ options, value, onChange, placeholder, className, icon }) => {
+const ListDropdown = ({ options, value, onChange, placeholder, className, icon, size = 'default' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -48,15 +48,41 @@ const ListDropdown = ({ options, value, onChange, placeholder, className, icon }
   const selectedOption = options.find(option => option.value === value);
   const displayValue = selectedOption ? selectedOption.label : placeholder;
 
+  // Get padding classes based on size
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'small':
+        return {
+          button: 'px-3 py-1.5 text-sm',
+          option: 'px-3 py-2 text-sm',
+          icon: 'w-4 h-4'
+        };
+      case 'compact':
+        return {
+          button: 'px-3 py-1 text-xs',
+          option: 'px-3 py-1.5 text-xs',
+          icon: 'w-3 h-3'
+        };
+      default:
+        return {
+          button: 'px-4 py-3',
+          option: 'px-4 py-3',
+          icon: 'w-5 h-5'
+        };
+    }
+  };
+
+  const sizeClasses = getSizeClasses();
+
   return (
     <div className={`relative ${className || ''}`} ref={dropdownRef}>
       {/* Dropdown Toggle Button */}
       <button
         type="button"
-        className="w-full px-4 py-3 text-left bg-gradient-glass backdrop-blur-glass border border-glass-border rounded-xl
+        className={`w-full ${sizeClasses.button} text-left bg-gradient-glass backdrop-blur-glass border border-glass-border rounded-xl
                    flex justify-between items-center transition-all duration-300
                    hover:bg-gradient-glass-strong focus:outline-none focus:ring-2 focus:ring-turquoise/50
-                   cursor-pointer group"
+                   cursor-pointer group`}
         onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -68,7 +94,7 @@ const ListDropdown = ({ options, value, onChange, placeholder, className, icon }
           </span>
         </div>
         <svg
-          className={`w-5 h-5 text-text-secondary transform transition-transform duration-300 group-hover:text-text-primary ${
+          className={`${sizeClasses.icon} text-text-secondary transform transition-transform duration-300 group-hover:text-text-primary ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -87,7 +113,7 @@ const ListDropdown = ({ options, value, onChange, placeholder, className, icon }
                      rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200"
         >
           {options.length === 0 ? (
-            <div className="px-4 py-3 text-text-secondary text-center italic">
+            <div className={`${sizeClasses.option} text-text-secondary text-center italic`}>
               No options available
             </div>
           ) : (
@@ -98,7 +124,7 @@ const ListDropdown = ({ options, value, onChange, placeholder, className, icon }
                   type="button"
                   role="option"
                   aria-selected={value === option.value}
-                  className={`w-full px-4 py-3 text-left transition-all duration-200 flex items-center space-x-3
+                  className={`w-full ${sizeClasses.option} text-left transition-all duration-200 flex items-center space-x-3
                              hover:bg-gradient-glass group cursor-pointer
                              ${index === 0 ? 'rounded-t-xl' : ''}
                              ${index === options.length - 1 ? 'rounded-b-xl' : ''}

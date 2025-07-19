@@ -2,7 +2,20 @@
 module.exports = {
   content: ["./src/**/*.{html,js,jsx}"],
   theme: {
+    screens: {
+      // Mobile First Approach
+      'xs': '480px',      // Small mobile
+      'sm': '640px',      // Mobile landscape
+      'md': '768px',      // Tablet portrait
+      'lg': '1024px',     // Tablet landscape / Small laptop
+      'xl': '1440px',     // Small laptop / Desktop
+      '2xl': '1920px',    // Large desktop (max)
+      '3xl': '1920px',    // Extra large (same as 2xl for max constraint)
+    },
     extend: {
+      maxWidth: {
+        'screen-2xl': '1920px', // Max width constraint
+      },
       colors: {
         // Primary Backgrounds - Pure black
         'primary': '#000000',

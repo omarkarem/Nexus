@@ -1,53 +1,44 @@
 import { useState } from 'react';
+import useListData from '../hooks/useListData';
 import ListCard from '../components/lists/ListCard';
 import CreateListCard from '../components/lists/CreateListCard';
-import Dropdown from '../components/Dropdown';
-import useListData from '../hooks/useListData';
-
 
 function Lists() {
   const { lists, loading, error, createList, editList, deleteList } = useListData();
 
-  // Show loading state
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 border-4 border-glass-border border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">Loading your lists...</h3>
-          <p className="text-text-secondary">Please wait while we fetch your data.</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-turquoise"></div>
       </div>
     );
   }
 
-  // Show error state
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">Failed to load lists</h3>
-          <p className="text-text-secondary mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20"
-          >
-            Try Again
-          </button>
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
         </div>
+        <h3 className="text-lg font-semibold text-text-primary mb-2">Error loading lists</h3>
+        <p className="text-text-secondary mb-6 max-w-sm mx-auto">
+          {error}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20">
+          Try Again
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Lists Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
         {/* Existing Lists */}
         {lists.map((list) => (
           <ListCard key={list.id} list={list} editList={editList} deleteList={deleteList} />
@@ -58,19 +49,19 @@ function Lists() {
 
       {/* Empty State (if no lists) */}
       {lists.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gradient-glass rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-8 sm:py-12">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-glass rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">No lists yet</h3>
-          <p className="text-text-secondary mb-6 max-w-sm mx-auto">
+          <h3 className="text-lg sm:text-xl font-semibold text-text-primary mb-2">No lists yet</h3>
+          <p className="text-sm sm:text-base text-text-secondary mb-4 sm:mb-6 max-w-sm mx-auto px-4">
             Create your first list to start organizing your tasks and boost your productivity.
           </p>
           <button
           onClick={() => createList('New List', 'blue')}
-          className="px-6 py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20">
+          className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20 text-sm sm:text-base">
             Create Your First List
           </button>
         </div>

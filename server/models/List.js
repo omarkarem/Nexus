@@ -15,13 +15,17 @@ const listSchema = new mongoose.Schema({
   },
   color: {
     type: String,
-    enum: ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'black'],
+    enum: ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'indigo', 'purple', 'pink', 'rose', 'gray', 'black'],
     default: 'blue'
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  isAllLists: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

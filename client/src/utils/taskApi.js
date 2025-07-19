@@ -249,3 +249,49 @@ export const deleteSubTask = async (taskId, subTaskId) => {
     return false;
   }
 }; 
+
+/**
+ * Fetch all tasks for "All Lists" view
+ * @returns {Promise<Array>} - Array of all user tasks or empty array
+ */
+export const fetchAllTasksForUser = async () => {
+  try {
+    const response = await fetch(buildApiUrl('/api/tasks/all-lists'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+
+    const data = await response.json();
+    
+    if (data.success && data.tasks) {
+      return data.tasks;
+    } else {
+      console.error('Failed to fetch all tasks:', data.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching all tasks:', error);
+    return [];
+  }
+};
+
+/**
+ * Reorder tasks in "All Lists" view
+ * @param {Array} taskUpdates - Array of {taskId, allListsOrder}
+ * @returns {Promise<boolean>} - Success status
+ */
+export const reorderTasksAllLists = async (taskUpdates) => {
+  try {
+    const response = await fetch(buildApiUrl('/api/tasks/reorder-all-lists'), {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ tasks: taskUpdates })
+    });
+
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error reordering All Lists tasks:', error);
+    return false;
+  }
+};

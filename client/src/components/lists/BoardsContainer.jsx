@@ -17,7 +17,7 @@ const BoardsContainer = ({
   moveTask
 }) => {
   return (
-    <div className='w-full grid grid-cols-4 gap-4'>
+    <div className='w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'>
         {/* Backlog Board */}
         <Board 
           name='Backlog' 
@@ -65,6 +65,7 @@ const BoardsContainer = ({
         {/* Today Board */}
         <Board 
           name='Today' 
+          borderColor="glass-border" 
           tasks={getTasksByBoard(currentList, 'today')}
           boardId="today"
           color={currentList.color}
@@ -89,7 +90,7 @@ const BoardsContainer = ({
           borderColor="glass-border" 
           tasks={getTasksByBoard(currentList, 'Done')}
           boardId="Done"
-          color="green"
+          color={currentList.color}
           toggleTaskComplete={(taskId, boardId) => toggleTaskComplete(taskId, boardId, listId)}
           updateTaskTitle={(taskId, newTitle) => updateTaskTitle(taskId, newTitle, listId)}
           deleteTask={(taskId, boardId) => deleteTask(taskId, boardId, listId)}
@@ -104,7 +105,7 @@ const BoardsContainer = ({
           listId={listId}
           moveTask={moveTask}
         />
-      </div>
+    </div>
   );
 };
 

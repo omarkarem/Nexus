@@ -49,6 +49,10 @@ const taskSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  allListsOrder: {
+    type: Number,
+    default: 0
+  },
   list: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'List',

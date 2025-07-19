@@ -7,6 +7,8 @@ import {
   deleteTask as apiDeleteTask,
   moveTask as apiMoveTask,
   reorderTasks as apiReorderTasks,
+  fetchAllTasksForUser,
+  reorderTasksAllLists as apiReorderTasksAllLists,
   addSubTask as apiAddSubTask,
   updateSubTask as apiUpdateSubTask,
   deleteSubTask as apiDeleteSubTask
@@ -28,17 +30,28 @@ const useListData = () => {
       setError(null);
       const fetchedLists = await fetchLists();
       
+      console.log('📋 Fetched lists from API:', fetchedLists);
+      
       // Fetch tasks for each list
       const listsWithTasks = await Promise.all(
         fetchedLists.map(async (list) => {
-          const tasks = await fetchTasksByList(list.id);
-          return {
-            ...list,
-            tasks: tasks || []
-          };
+          console.log(`🔄 Processing list: ${list.title} (isAllLists: ${list.isAllLists})`);
+          
+          // Special handling for "All Lists"
+          if (list.title === 'All Lists' || list.isAllLists) {
+            console.log('🎯 Found All Lists, fetching all tasks...');
+            const allTasks = await fetchAllTasksForUser();
+            console.log('📝 All tasks fetched:', allTasks?.length || 0, 'tasks');
+            return { ...list, tasks: allTasks || [], isAllLists: true };
+          } else {
+            const tasks = await fetchTasksByList(list.id);
+            console.log(`📝 Tasks for ${list.title}:`, tasks?.length || 0, 'tasks');
+            return { ...list, tasks: tasks || [] };
+          }
         })
       );
       
+      console.log('✅ Final lists with tasks:', listsWithTasks);
       setLists(listsWithTasks);
     } catch (err) {
       console.error('Error loading lists:', err);
@@ -51,12 +64,15 @@ const useListData = () => {
   // Create List
   const createList = async (listTitle, listColor, description = '') => {
     try {
+      console.log('🔄 Creating list:', { listTitle, listColor, description });
       const newList = await apiCreateList(listTitle, listColor, description);
+      console.log('✅ New list created:', newList);
+      
       if (newList) {
-        // Add empty tasks array to new list
-        const listWithTasks = { ...newList, tasks: [] };
-        setLists(prevLists => [listWithTasks, ...prevLists]);
-        return listWithTasks;
+        // Reload all lists to include the auto-created "All Lists" if this was the first list
+        console.log('🔄 Reloading all lists to include All Lists...');
+        await loadLists();
+        return newList;
       }
     } catch (error) {
       console.error('Error creating list:', error);
@@ -100,6 +116,23 @@ const useListData = () => {
     }
   };
 
+  // Refresh All Lists data to ensure listInfo is correct
+  const refreshAllListsData = async () => {
+    try {
+      const allTasks = await fetchAllTasksForUser();
+      setLists(prevLists =>
+        prevLists.map(list => {
+          if (list.isAllLists || list.title === 'All Lists') {
+            return { ...list, tasks: allTasks || [] };
+          }
+          return list;
+        })
+      );
+    } catch (error) {
+      console.error('Error refreshing All Lists data:', error);
+    }
+  };
+
   // Task management functions - now using real API calls
   const toggleTaskComplete = async (taskId, boardId, listId) => {
     // Get current task to determine new completion status
@@ -109,6 +142,17 @@ const useListData = () => {
 
     const newCompletedStatus = !task.completed;
     const newBoard = newCompletedStatus ? 'Done' : (task.lastBoard || task.originalBoard || boardId);
+    const isAllListsView = list?.isAllLists || list?.title === 'All Lists';
+
+    console.log('🔄 Toggling task completion:', {
+      taskId,
+      taskTitle: task.title,
+      currentList: list.title,
+      isAllLists: isAllListsView,
+      currentListInfo: task.listInfo,
+      newCompletedStatus,
+      newBoard
+    });
 
     try {
       // Update via API
@@ -117,18 +161,48 @@ const useListData = () => {
         board: newBoard
       });
 
+      console.log('✅ API response:', updatedTask);
+
       if (updatedTask) {
-        // Update local state
+        // Update local state in ALL lists (sync changes everywhere)
         setLists(prevLists => 
-          prevLists.map(list =>
-            list.id === listId ? { 
-              ...list, 
-              tasks: list.tasks.map(t => 
-                t.id === taskId ? updatedTask : t
-              )
-            } : list
-          )
+          prevLists.map(list => {
+            // Update the task in every list where it appears
+            const hasTask = list.tasks.some(t => t.id === taskId);
+            if (!hasTask) return list;
+            
+            return {
+              ...list,
+              tasks: list.tasks.map(t => {
+                if (t.id === taskId) {
+                  if (list.isAllLists || list.title === 'All Lists') {
+                    // For All Lists view, preserve the listInfo field
+                    const taskWithListInfo = {
+                      ...updatedTask,
+                      listInfo: t.listInfo // Preserve the original listInfo
+                    };
+                    console.log('🔄 Preserving listInfo in All Lists:', {
+                      taskId,
+                      originalListInfo: t.listInfo,
+                      preservedListInfo: taskWithListInfo.listInfo
+                    });
+                    return taskWithListInfo;
+                  } else {
+                    // For regular lists, use the updated task directly
+                    return updatedTask;
+                  }
+                }
+                return t;
+              })
+            };
+          })
         );
+
+        // If we're in All Lists view, refresh the data to ensure listInfo is correct
+        if (isAllListsView) {
+          console.log('🔄 Refreshing All Lists data after task update...');
+          setTimeout(() => refreshAllListsData(), 100);
+        }
       }
     } catch (error) {
       console.error('Error toggling task completion:', error);
@@ -143,14 +217,31 @@ const useListData = () => {
       if (updatedTask) {
         // Update local state
         setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === listId ? {
-              ...list, 
-              tasks: list.tasks.map(task =>
-                task.id === taskId ? updatedTask : task
-              )
-            } : list
-          )
+          prevLists.map(list => {
+            if (list.id === listId) {
+              return {
+                ...list, 
+                tasks: list.tasks.map(task =>
+                  task.id === taskId ? updatedTask : task
+                )
+              };
+            } else if (list.isAllLists || list.title === 'All Lists') {
+              // For All Lists view, preserve the listInfo field
+              return {
+                ...list,
+                tasks: list.tasks.map(task => {
+                  if (task.id === taskId) {
+                    return {
+                      ...updatedTask,
+                      listInfo: task.listInfo // Preserve the original listInfo
+                    };
+                  }
+                  return task;
+                })
+              };
+            }
+            return list;
+          })
         );
       }
     } catch (error) {
@@ -164,11 +255,14 @@ const useListData = () => {
       const success = await apiDeleteTask(taskId);
 
       if (success) {
-        // Update local state
+        // Update local state - remove from both the original list and All Lists
         setLists(prevLists =>
           prevLists.map(list => 
             list.id === listId ? {
               ...list, 
+              tasks: list.tasks.filter(task => task.id !== taskId)
+            } : list.isAllLists || list.title === 'All Lists' ? {
+              ...list,
               tasks: list.tasks.filter(task => task.id !== taskId)
             } : list
           )
@@ -185,14 +279,35 @@ const useListData = () => {
       const newTask = await apiCreateTask(taskTitle, boardId, targetListId);
 
       if (newTask) {
+        // Find the target list to get its info for All Lists view
+        const targetList = lists.find(l => l.id === targetListId);
+        
         // Update local state
         setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === targetListId ? {
-              ...list, 
-              tasks: [...list.tasks, newTask]
-            } : list
-          )
+          prevLists.map(list => {
+            if (list.id === targetListId) {
+              // Add to the target list
+              return {
+                ...list, 
+                tasks: [...list.tasks, newTask]
+              };
+            } else if (list.isAllLists || list.title === 'All Lists') {
+              // Add to All Lists view with listInfo
+              const taskWithListInfo = {
+                ...newTask,
+                listInfo: {
+                  id: targetList.id,
+                  title: targetList.title,
+                  color: targetList.color
+                }
+              };
+              return {
+                ...list,
+                tasks: [...list.tasks, taskWithListInfo]
+              };
+            }
+            return list;
+          })
         );
       }
     } catch (error) {
@@ -208,14 +323,31 @@ const useListData = () => {
       if (updatedTask) {
         // Update local state
         setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === listId ? {
-              ...list,
-              tasks: list.tasks.map(task =>
-                task.id === taskId ? updatedTask : task
-              )
-            } : list
-          )
+          prevLists.map(list => {
+            if (list.id === listId) {
+              return {
+                ...list,
+                tasks: list.tasks.map(task =>
+                  task.id === taskId ? updatedTask : task
+                )
+              };
+            } else if (list.isAllLists || list.title === 'All Lists') {
+              // For All Lists view, preserve the listInfo field
+              return {
+                ...list,
+                tasks: list.tasks.map(task => {
+                  if (task.id === taskId) {
+                    return {
+                      ...updatedTask,
+                      listInfo: task.listInfo // Preserve the original listInfo
+                    };
+                  }
+                  return task;
+                })
+              };
+            }
+            return list;
+          })
         );
       }
     } catch (error) {
@@ -232,17 +364,35 @@ const useListData = () => {
       if (newSubTask) {
         // Update local state
         setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === listId ? {
-              ...list, 
-              tasks: list.tasks.map(task =>
-                task.id === taskId ? {
-                  ...task, 
-                  subTasks: [...(task.subTasks || []), newSubTask]
-                } : task
-              )
-            } : list
-          )
+          prevLists.map(list => {
+            if (list.id === listId) {
+              return {
+                ...list, 
+                tasks: list.tasks.map(task =>
+                  task.id === taskId ? {
+                    ...task, 
+                    subTasks: [...(task.subTasks || []), newSubTask]
+                  } : task
+                )
+              };
+            } else if (list.isAllLists || list.title === 'All Lists') {
+              // For All Lists view, preserve the listInfo field
+              return {
+                ...list,
+                tasks: list.tasks.map(task => {
+                  if (task.id === taskId) {
+                    return {
+                      ...task,
+                      subTasks: [...(task.subTasks || []), newSubTask],
+                      listInfo: task.listInfo // Preserve the original listInfo
+                    };
+                  }
+                  return task;
+                })
+              };
+            }
+            return list;
+          })
         );
       }
     } catch (error) {
@@ -344,6 +494,9 @@ const useListData = () => {
 
   // Handle same-board reordering with Framer Motion
   const moveTask = useCallback(async (taskId, sourceBoard, targetBoard, dropIndex, listId, newOrderedTasks) => {
+    const currentList = lists.find(l => l.id === listId);
+    const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
+    
     // Update local state immediately for smooth UI
     setLists(prevLists =>
       prevLists.map(list => {
@@ -353,23 +506,20 @@ const useListData = () => {
         if (newOrderedTasks && sourceBoard === targetBoard) {
           // Create a copy of all tasks
           let updatedTasks = [...list.tasks];
-          const beforeCount = updatedTasks.length;
           
-          // Update only the reordered tasks with new order values
+          // Update the reordered tasks with new order values
           newOrderedTasks.forEach((task, index) => {
             const taskIndex = updatedTasks.findIndex(t => t.id === task.id);
             if (taskIndex !== -1) {
-              updatedTasks[taskIndex] = { ...task, order: index };
-            } else {
-              console.error('❌ Task not found in list:', task.id, task.title);
+              if (isAllListsView) {
+                // Update allListsOrder for All Lists view
+                updatedTasks[taskIndex] = { ...task, allListsOrder: index };
+              } else {
+                // Update regular order for normal lists
+                updatedTasks[taskIndex] = { ...task, order: index };
+              }
             }
           });
-          
-          const afterCount = updatedTasks.length;
-          
-          if (beforeCount !== afterCount) {
-            console.error('🚨 TASK COUNT MISMATCH! Tasks may have disappeared');
-          }
           
           return { ...list, tasks: updatedTasks };
         }
@@ -381,38 +531,49 @@ const useListData = () => {
     // Sync with API in background (for reordering)
     if (newOrderedTasks && sourceBoard === targetBoard) {
       try {
-        const taskUpdates = newOrderedTasks.map((task, index) => ({
-          taskId: task.id,
-          order: index
-        }));
-        
-        console.log('🔄 Frontend: Sending reorder request:', {
-          board: sourceBoard,
-          listId: listId,
-          updates: taskUpdates
-        });
-        
-        const success = await apiReorderTasks(taskUpdates);
-        
-        if (success) {
-          console.log('✅ Frontend: Reorder API call successful');
+        if (isAllListsView) {
+          // Use All Lists reorder API
+          const taskUpdates = newOrderedTasks.map((task, index) => ({
+            taskId: task.id,
+            allListsOrder: index
+          }));
+          
+          console.log('🔄 Frontend: Sending All Lists reorder request:', taskUpdates);
+          const success = await apiReorderTasksAllLists(taskUpdates);
+          
+          if (success) {
+            console.log('✅ Frontend: All Lists reorder API call successful');
+          } else {
+            console.error('❌ Frontend: All Lists reorder API call failed');
+          }
         } else {
-          console.error('❌ Frontend: Reorder API call failed');
+          // Use regular reorder API
+          const taskUpdates = newOrderedTasks.map((task, index) => ({
+            taskId: task.id,
+            order: index
+          }));
+          
+          console.log('🔄 Frontend: Sending regular reorder request:', taskUpdates);
+          const success = await apiReorderTasks(taskUpdates);
+          
+          if (success) {
+            console.log('✅ Frontend: Regular reorder API call successful');
+          } else {
+            console.error('❌ Frontend: Regular reorder API call failed');
+          }
         }
       } catch (error) {
         console.error('❌ Frontend: Error syncing task order with API:', error);
-        // Could reload data here if needed
       }
     }
-  }, []);
+  }, [lists]);
 
   // Cross-board movement function
   const moveTaskCrossBoard = useCallback(async (taskId, sourceBoard, targetBoard, listId) => {
     console.log('🔄 Cross-board move:', { taskId, sourceBoard, targetBoard });
     
-    // Get current task
-    const list = lists.find(l => l.id === listId);
-    const task = list?.tasks.find(t => t.id === taskId);
+    // Get current task from any list
+    const task = lists.flatMap(l => l.tasks).find(t => t.id === taskId);
     if (!task) return;
 
     // Determine completion status based on target board
@@ -425,16 +586,29 @@ const useListData = () => {
       const updatedTask = await apiMoveTask(taskId, targetBoard, 0, completedStatus);
 
       if (updatedTask) {
-        // Update local state
+        // Update local state in ALL lists (sync board changes everywhere)
         setLists(prevLists =>
           prevLists.map(list => {
-            if (list.id !== listId) return list;
+            // Update the task in every list where it appears
+            const hasTask = list.tasks.some(t => t.id === taskId);
+            if (!hasTask) return list;
             
             return {
               ...list,
-              tasks: list.tasks.map(t => 
-                t.id === taskId ? updatedTask : t
-              )
+              tasks: list.tasks.map(t => {
+                if (t.id === taskId) {
+                  // For All Lists view, preserve the listInfo field
+                  if (list.isAllLists || list.title === 'All Lists') {
+                    return {
+                      ...updatedTask,
+                      listInfo: t.listInfo // Preserve the original listInfo
+                    };
+                  } else {
+                    return updatedTask;
+                  }
+                }
+                return t;
+              })
             };
           })
         );

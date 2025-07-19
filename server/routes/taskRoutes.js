@@ -1,14 +1,8 @@
 import express from 'express';
 import {
-  getTasksByList,
-  createTask,
-  updateTask,
-  deleteTask,
-  moveTask,
-  reorderTasks,
-  addSubTask,
-  updateSubTask,
-  deleteSubTask
+  getTasksByList, createTask, updateTask, deleteTask, moveTask, reorderTasks,
+  getAllTasksForUser, reorderTasksAllLists,
+  addSubTask, updateSubTask, deleteSubTask
 } from '../controllers/taskController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -19,10 +13,12 @@ router.use(authenticateToken);
 
 // Task CRUD operations
 router.get('/list/:listId', getTasksByList);    // GET /api/tasks/list/:listId
+router.get('/all-lists', getAllTasksForUser);   // GET /api/tasks/all-lists
 router.post('/', createTask);                   // POST /api/tasks
 
 // Task movement and reordering - MUST come before /:taskId routes
 router.put('/reorder', reorderTasks);           // PUT /api/tasks/reorder
+router.put('/reorder-all-lists', reorderTasksAllLists); // PUT /api/tasks/reorder-all-lists
 router.put('/:taskId/move', moveTask);          // PUT /api/tasks/:taskId/move
 
 // Generic task operations - MUST come after specific routes

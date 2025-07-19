@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Note from "./Note";
 import SubTask from "./SubTask";
+import { getColorClass } from '../../utils/listUtils';
 
 const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, updateTaskNote, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, currentList, index }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -145,8 +146,15 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                 <div className="flex items-center space-x-2 flex-shrink-0">
                     {/* Initial Badge */}
                     {!isEditing && (
-                        <span className="text-text-secondary text-[10px] py-1 px-2 bg-gray-500/20 backdrop-blur-glass rounded-full group-hover:hidden flex-shrink-0">
-                            {currentList.title.slice(0, 1)}
+                        <span className={`text-white text-[10px] py-1 px-2 ${
+                            currentList?.isAllLists && task.listInfo ? 
+                                getColorClass(task.listInfo.color) : 
+                                getColorClass(currentList.color)
+                        } backdrop-blur-glass rounded-full group-hover:hidden flex-shrink-0`}>
+                            {currentList?.isAllLists && task.listInfo ? 
+                                task.listInfo.title.slice(0, 1) : 
+                                currentList.title.slice(0, 1)
+                            }
                         </span>
                     )}
                     

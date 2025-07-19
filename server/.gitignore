@@ -3,6 +3,7 @@ node_modules/
 
 # Environment variables
 .env
+.env.*
 
 # Logs
 *.log
@@ -36,4 +37,29 @@ build/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Security - Critical files to never commit
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+secrets.json
+credentials.json
+config.json
+*.db
+*.sqlite
+*.sqlite3
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Backup files
+*.bak
+*.backup
+*.old 

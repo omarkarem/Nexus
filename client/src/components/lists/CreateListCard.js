@@ -10,12 +10,18 @@ function CreateListCard({ createList }) {
   const [errors, setErrors] = useState({});
 
   const colorOptions = [
-    { name: 'blue', class: 'bg-gray-700', label: 'Dark Gray' },
-    { name: 'red', class: 'bg-gray-600', label: 'Medium Gray' },
-    { name: 'green', class: 'bg-gray-400', label: 'Light Gray' },
-    { name: 'orange', class: 'bg-gray-500', label: 'Gray' },
-    { name: 'purple', class: 'bg-gray-800', label: 'Darker Gray' },
-    { name: 'pink', class: 'bg-gray-300', label: 'Lighter Gray' }
+    { name: 'red', class: 'bg-red-500', label: 'Red' },
+    { name: 'orange', class: 'bg-orange-500', label: 'Orange' },
+    { name: 'yellow', class: 'bg-yellow-500', label: 'Yellow' },
+    { name: 'green', class: 'bg-green-500', label: 'Green' },
+    { name: 'teal', class: 'bg-teal-500', label: 'Teal' },
+    { name: 'blue', class: 'bg-blue-500', label: 'Blue' },
+    { name: 'indigo', class: 'bg-indigo-500', label: 'Indigo' },
+    { name: 'purple', class: 'bg-purple-500', label: 'Purple' },
+    { name: 'pink', class: 'bg-pink-500', label: 'Pink' },
+    { name: 'rose', class: 'bg-rose-500', label: 'Rose' },
+    { name: 'gray', class: 'bg-gray-500', label: 'Gray' },
+    { name: 'black', class: 'bg-black', label: 'Black' }
   ];
 
   const validateForm = () => {
@@ -116,7 +122,7 @@ function CreateListCard({ createList }) {
                 <label className="block text-sm font-medium text-text-primary mb-2">
                   Choose Color
                 </label>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   {colorOptions.map(color => (
                     <button
                       key={color.name}

@@ -16,24 +16,35 @@ function ListCard({ list, editList, deleteList }) {
   // Get color class based on color
   const getColorClass = (colorName) => {
     const colorMap = {
-      red: 'bg-gray-600',
-      orange: 'bg-gray-500',
-      green: 'bg-gray-400',
-      blue: 'bg-gray-700',
-      purple: 'bg-gray-800',
-      pink: 'bg-gray-300',
+      red: 'bg-red-500',
+      orange: 'bg-orange-500',
+      yellow: 'bg-yellow-500',
+      green: 'bg-green-500',
+      teal: 'bg-teal-500',
+      blue: 'bg-blue-500',
+      indigo: 'bg-indigo-500',
+      purple: 'bg-purple-500',
+      pink: 'bg-pink-500',
+      rose: 'bg-rose-500',
+      gray: 'bg-gray-500',
       black: 'bg-black'
     };
     return colorMap[colorName] || 'bg-gray-500';
   };
 
   const colorOptions = [
-    { name: 'blue', class: 'bg-gray-700', label: 'Dark Gray' },
-    { name: 'red', class: 'bg-gray-600', label: 'Medium Gray' },
-    { name: 'green', class: 'bg-gray-400', label: 'Light Gray' },
-    { name: 'orange', class: 'bg-gray-500', label: 'Gray' },
-    { name: 'purple', class: 'bg-gray-800', label: 'Darker Gray' },
-    { name: 'pink', class: 'bg-gray-300', label: 'Lighter Gray' }
+    { name: 'red', class: 'bg-red-500', label: 'Red' },
+    { name: 'orange', class: 'bg-orange-500', label: 'Orange' },
+    { name: 'yellow', class: 'bg-yellow-500', label: 'Yellow' },
+    { name: 'green', class: 'bg-green-500', label: 'Green' },
+    { name: 'teal', class: 'bg-teal-500', label: 'Teal' },
+    { name: 'blue', class: 'bg-blue-500', label: 'Blue' },
+    { name: 'indigo', class: 'bg-indigo-500', label: 'Indigo' },
+    { name: 'purple', class: 'bg-purple-500', label: 'Purple' },
+    { name: 'pink', class: 'bg-pink-500', label: 'Pink' },
+    { name: 'rose', class: 'bg-rose-500', label: 'Rose' },
+    { name: 'gray', class: 'bg-gray-500', label: 'Gray' },
+    { name: 'black', class: 'bg-black', label: 'Black' }
   ];
 
   const validateForm = () => {
@@ -108,14 +119,31 @@ function ListCard({ list, editList, deleteList }) {
         <Link to={`/app/lists/${list.id}`} className="block">
           <div className="relative">
             {/* Tasks List */}
-            <div className="space-y-2 px-1 py-2">
-              {displayTasks.map((task) => (
-                <div key={task.id} className="bg-glass-bg backdrop-blur-glass border border-glass-border rounded-md px-2 py-1 transition-all duration-200 ">
-                  <span className="text-[12px] text-text-primary">
-                    {truncateText(task.title)}
-                  </span>
+            <div className="min-h-[160px] space-y-2 px-1 py-2 flex flex-col">
+              {displayTasks.length > 0 ? (
+                displayTasks.map((task) => (
+                  <div key={task.id} className="bg-glass-bg backdrop-blur-glass border border-glass-border rounded-md px-2 py-1 transition-all duration-200">
+                    <span className="text-[12px] text-text-primary">
+                      {truncateText(task.title)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                // Placeholder content when no tasks
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <svg className="w-8 h-8 text-text-secondary mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p className="text-text-secondary text-xs opacity-60">No tasks yet</p>
+                  </div>
                 </div>
-              ))}
+              )}
+              
+              {/* Fill remaining space if fewer than 4 tasks */}
+              {displayTasks.length > 0 && displayTasks.length < 4 && (
+                <div className="flex-1"></div>
+              )}
             </div>
           </div>
         </Link>
@@ -168,7 +196,7 @@ function ListCard({ list, editList, deleteList }) {
                 <label className="block text-text-secondary mb-2 text-sm font-medium">
                   Color
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {colorOptions.map((colorOption) => (
                     <button
                       key={colorOption.name}
@@ -181,7 +209,7 @@ function ListCard({ list, editList, deleteList }) {
                       }`}
                     >
                       <div className={`w-4 h-4 rounded ${colorOption.class}`}></div>
-                      <span className="text-text-primary text-sm">{colorOption.label}</span>
+                      <span className="text-text-primary text-sm hidden lg:block">{colorOption.label}</span>
                     </button>
                   ))}
                 </div>

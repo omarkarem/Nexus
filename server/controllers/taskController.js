@@ -60,47 +60,31 @@ const getTasksByList = async (req, res) => {
  */
 const createTask = async (req, res) => {
   try {
-    const { title, board = 'backlog', listId } = req.body;
+    const { title, board, listId } = req.body;
 
-    if (!title || !title.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Task title is required'
-      });
-    }
-
-    if (!listId) {
-      return res.status(400).json({
-        success: false,
-        message: 'List ID is required'
-      });
-    }
-
-    // Verify list exists and belongs to user
-    const list = await List.findOne({ _id: listId, owner: req.user.id });
-    if (!list) {
-      return res.status(404).json({
-        success: false,
-        message: 'List not found'
-      });
-    }
-
-    // Get the highest order number for this board in this list
-    const lastTask = await Task.findOne({
-      list: listId,
-      board: board,
-      owner: req.user.id
+    // Get the highest order number for the board in this list
+    const highestOrderTask = await Task.findOne({ 
+      list: listId, 
+      board: board, 
+      owner: req.user.id 
     }).sort({ order: -1 });
 
-    const nextOrder = lastTask ? lastTask.order + 1 : 0;
+    // Get the highest allListsOrder for this user
+    const highestAllListsOrderTask = await Task.findOne({ 
+      owner: req.user.id 
+    }).sort({ allListsOrder: -1 });
 
-    // Create new task
+    const newOrder = highestOrderTask ? highestOrderTask.order + 1 : 0;
+    const newAllListsOrder = highestAllListsOrderTask ? highestAllListsOrderTask.allListsOrder + 1 : 0;
+
+    // Create the task
     const task = await Task.create({
       title: title.trim(),
-      board: board,
-      originalBoard: board,
-      lastBoard: board,
-      order: nextOrder,
+      board: board || 'backlog',
+      originalBoard: board || 'backlog',
+      lastBoard: board || 'backlog',
+      order: newOrder,
+      allListsOrder: newAllListsOrder,
       list: listId,
       owner: req.user.id
     });
@@ -115,7 +99,8 @@ const createTask = async (req, res) => {
       originalBoard: task.originalBoard,
       lastBoard: task.lastBoard,
       order: task.order,
-      subTasks: []
+      allListsOrder: task.allListsOrder,
+      subTasks: task.subTasks
     };
 
     res.status(201).json({
@@ -475,14 +460,121 @@ const deleteSubTask = async (req, res) => {
   }
 };
 
-export {
-  getTasksByList,
-  createTask,
-  updateTask,
-  deleteTask,
-  moveTask,
+/**
+ * Get all tasks for "All Lists" view
+ * @route GET /api/tasks/all-lists
+ */
+const getAllTasksForUser = async (req, res) => {
+  try {
+    // Get all tasks for this user
+    let tasks = await Task.find({ owner: req.user.id })
+      .populate('list', 'title color')
+      .sort({ board: 1, allListsOrder: 1 });
+
+    // Check if any tasks don't have allListsOrder set
+    const tasksWithoutAllListsOrder = tasks.filter(task => task.allListsOrder === undefined || task.allListsOrder === null);
+    
+    if (tasksWithoutAllListsOrder.length > 0) {
+      console.log('🔄 Found tasks without allListsOrder, setting them now...');
+      
+      // Set allListsOrder for tasks that don't have it
+      let currentAllListsOrder = 0;
+      for (const task of tasks) {
+        if (task.allListsOrder === undefined || task.allListsOrder === null) {
+          task.allListsOrder = currentAllListsOrder++;
+          await task.save();
+        } else {
+          currentAllListsOrder = Math.max(currentAllListsOrder, task.allListsOrder + 1);
+        }
+      }
+      
+      // Re-fetch tasks with updated allListsOrder
+      tasks = await Task.find({ owner: req.user.id })
+        .populate('list', 'title color')
+        .sort({ board: 1, allListsOrder: 1 });
+        
+      console.log('✅ Updated allListsOrder for existing tasks');
+    }
+
+    // Format tasks for frontend
+    const formattedTasks = tasks.map(task => ({
+      id: task._id,
+      title: task.title,
+      note: task.note,
+      completed: task.completed,
+      board: task.board,
+      originalBoard: task.originalBoard,
+      lastBoard: task.lastBoard,
+      order: task.order,
+      allListsOrder: task.allListsOrder,
+      listInfo: {
+        id: task.list._id,
+        title: task.list.title,
+        color: task.list.color
+      },
+      subTasks: task.subTasks.map(subTask => ({
+        id: subTask._id,
+        title: subTask.title,
+        completed: subTask.completed
+      }))
+    }));
+
+    console.log('📝 Returning', formattedTasks.length, 'tasks for All Lists view');
+
+    res.status(200).json({
+      success: true,
+      tasks: formattedTasks
+    });
+  } catch (error) {
+    console.error('Error fetching all tasks:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch tasks'
+    });
+  }
+};
+
+/**
+ * Reorder tasks in "All Lists" view
+ * @route PUT /api/tasks/reorder-all-lists
+ */
+const reorderTasksAllLists = async (req, res) => {
+  try {
+    const { tasks } = req.body; // Array of { taskId, allListsOrder }
+    
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return res.status(400).json({ success: false, message: 'Tasks array is required' });
+    }
+    
+    console.log('🔄 Reordering tasks in All Lists:', tasks);
+    
+    // Update all tasks' allListsOrder in sequence
+    for (const { taskId, allListsOrder } of tasks) {
+      await Task.findOneAndUpdate(
+        { _id: taskId, owner: req.user.id },
+        { allListsOrder: allListsOrder },
+        { new: true }
+      );
+    }
+    
+    console.log('✅ All Lists order updated successfully');
+    res.status(200).json({ success: true, message: 'All Lists order updated successfully' });
+  } catch (error) {
+    console.error('Error reordering All Lists tasks:', error);
+    res.status(500).json({ success: false, message: 'Failed to reorder All Lists tasks' });
+  }
+};
+
+export { 
+  getTasksByList, 
+  createTask, 
+  updateTask, 
+  deleteTask, 
+  moveTask, 
   reorderTasks,
-  addSubTask,
-  updateSubTask,
-  deleteSubTask
+  getAllTasksForUser,
+  reorderTasksAllLists,
+  addSubTask, 
+  updateSubTask, 
+  deleteSubTask 
 }; 

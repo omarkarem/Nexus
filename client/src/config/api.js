@@ -1,7 +1,7 @@
 // API Configuration
 const API_CONFIG = {
-  // Base URL for backend API
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:4000',
+  // Base URL for backend API - Must be configured via REACT_APP_API_URL
+  BASE_URL: process.env.REACT_APP_API_URL,
   
   // API endpoints
   ENDPOINTS: {
@@ -19,6 +19,9 @@ const API_CONFIG = {
 
 // Helper function to build full API URLs
 export const buildApiUrl = (endpoint) => {
+  if (!API_CONFIG.BASE_URL) {
+    throw new Error('REACT_APP_API_URL environment variable is not configured. Please set it in your .env file.');
+  }
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 

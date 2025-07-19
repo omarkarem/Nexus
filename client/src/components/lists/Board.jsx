@@ -8,23 +8,37 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
     const [isHovering, setIsHovering] = useState(false);
     const boardRef = useRef(null);
 
+    // Check if we're in All Lists view
+    const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
+
     // Get color class based on color
     const getColorClass = (colorName) => {
         const colorMap = {
-            red: 'bg-gray-600',
-            orange: 'bg-gray-500',
-            green: 'bg-gray-400',
-            blue: 'bg-gray-700',
-            purple: 'bg-gray-800',
-            pink: 'bg-gray-300',
+            red: 'bg-red-500',
+            orange: 'bg-orange-500',
+            yellow: 'bg-yellow-500',
+            green: 'bg-green-500',
+            teal: 'bg-teal-500',
+            blue: 'bg-blue-500',
+            indigo: 'bg-indigo-500',
+            purple: 'bg-purple-500',
+            pink: 'bg-pink-500',
+            rose: 'bg-rose-500',
+            gray: 'bg-gray-500',
             black: 'bg-black'
         };
         
         return colorMap[colorName] || 'bg-gray-500';
     };
 
-    // Get sorted tasks for consistent ordering
-    const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
+    // Get sorted tasks for consistent ordering - use correct order field
+    const sortedTasks = [...tasks].sort((a, b) => {
+        if (isAllListsView) {
+            return (a.allListsOrder || 0) - (b.allListsOrder || 0);
+        } else {
+            return (a.order || 0) - (b.order || 0);
+        }
+    });
 
     // Handle reordering within this board (Framer Motion Reorder)
     const handleReorder = (newOrder) => {
@@ -39,10 +53,18 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
             return;
         }
         
-        console.log('✅ Reordering within board:', boardId);
+        console.log('✅ Reordering within board:', boardId, 'All Lists view:', isAllListsView);
+        console.log('📝 Tasks to reorder:', validTasks.map(t => ({ id: t.id, title: t.title, currentOrder: isAllListsView ? t.allListsOrder : t.order })));
         
+        // Update the correct order field based on view
         validTasks.forEach((task, index) => {
-            task.order = index;
+            if (isAllListsView) {
+                task.allListsOrder = index;
+                console.log(`🔄 Updated ${task.title} allListsOrder to ${index}`);
+            } else {
+                task.order = index;
+                console.log(`🔄 Updated ${task.title} order to ${index}`);
+            }
         });
         
         moveTask(validTasks[0].id, boardId, boardId, 0, listId, validTasks);
@@ -116,16 +138,16 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
         <div 
             ref={boardRef}
             data-board-id={boardId}
-            className={`w-full min-h-[80vh] bg-gradient-glass backdrop-blur-glass border border-${borderColor} rounded-xl py-4 px-6 transition-all duration-200 ${
+            className={`w-full min-h-[60vh] sm:min-h-[70vh] lg:min-h-[80vh] bg-gradient-glass backdrop-blur-glass border border-${borderColor} rounded-xl py-3 sm:py-4 px-3 sm:px-4 lg:px-6 transition-all duration-200 ${
                 isHovering && draggedTask ? 'ring-2 ring-turquoise/50 bg-turquoise/5' : ''
             }`}
         >
             <div className="flex flex-col items-center">
                 <div className="w-full flex items-center">
                     <div className="flex items-center">
-                    <h3 className='text-[24px]'>{name}</h3>
+                    <h3 className='text-lg sm:text-xl lg:text-2xl'>{name}</h3>
                         {name === 'Done' && (
-                            <svg className="w-6 h-6 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-500 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -133,7 +155,7 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
 
                     
                     {boardId !== 'Done' && (
-                        <div className='flex items-center ml-auto text-[26px]'>+</div>
+                        <div className='flex items-center ml-auto text-xl sm:text-2xl lg:text-3xl'>+</div>
                     )}
                 </div>
 
@@ -141,12 +163,12 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                     axis="y" 
                     values={sortedTasks} 
                     onReorder={handleReorder}
-                    className="w-full py-4 min-h-fit"
+                    className="w-full py-3 sm:py-4 min-h-fit"
                     layoutScroll
                     style={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        gap: '12px'
+                        gap: '8px'
                     }}
                 >
                   <AnimatePresence mode="popLayout">

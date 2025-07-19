@@ -18,33 +18,33 @@ function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-dark">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-dark">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold text-text-primary mb-4">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-text-primary mb-3 sm:mb-4">
             How It <span className="bg-gradient-aurora bg-clip-text text-transparent">Works</span>
           </h2>
-          <p className="text-xl text-text-secondary max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto px-4">
             Simple, powerful, effective. Master your productivity in three steps.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {steps.map((step, index) => (
             <div key={index} className="text-center relative">
               {/* Connecting line */}
               {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-turquoise opacity-50 transform translate-x-1/2"></div>
+                <div className="hidden md:block absolute top-8 sm:top-12 lg:top-16 left-1/2 w-full h-0.5 bg-gradient-turquoise opacity-50 transform translate-x-1/2"></div>
               )}
               
-              <div className="bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl p-8 relative z-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-turquoise to-turquoise-light rounded-full text-primary font-bold text-xl mb-6 shadow-lg shadow-turquoise/20">
+              <div className="bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl p-6 sm:p-8 relative z-10">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-turquoise to-turquoise-light rounded-full text-primary font-bold text-lg sm:text-xl mb-4 sm:mb-6 shadow-lg shadow-turquoise/20">
                   {step.number}
                 </div>
-                <h3 className="text-2xl font-semibold text-text-primary mb-4">
+                <h3 className="text-xl sm:text-2xl font-semibold text-text-primary mb-3 sm:mb-4">
                   <span className="bg-gradient-turquoise bg-clip-text text-transparent">{step.title}</span>
                 </h3>
-                <p className="text-text-secondary leading-relaxed">
+                <p className="text-sm sm:text-base text-text-secondary leading-relaxed">
                   {step.description}
                 </p>
               </div>

@@ -292,6 +292,42 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                             }}
                             className="flex items-center space-x-2 hover:bg-glass-bg/20 rounded px-1 py-0.5 transition-all duration-200"
                         >
+                            {/* Subtask Progress Circle and Count */}
+                            {task.subTasks && task.subTasks.length > 0 && (() => {
+                                const total = task.subTasks.length;
+                                const completed = task.subTasks.filter(st => st.completed).length;
+                                const percent = total === 0 ? 0 : completed / total;
+                                const radius = 8; // px
+                                const stroke = 3;
+                                const circ = 2 * Math.PI * radius;
+                                return (
+                                    <span className="flex items-center space-x-1">
+                                        <svg width={22} height={22} className="block" style={{ minWidth: 22, minHeight: 22 }}>
+                                            <circle
+                                                cx={11}
+                                                cy={11}
+                                                r={radius}
+                                                fill="none"
+                                                stroke="#e5e7eb" // Tailwind gray-200
+                                                strokeWidth={stroke}
+                                            />
+                                            <circle
+                                                cx={11}
+                                                cy={11}
+                                                r={radius}
+                                                fill="none"
+                                                stroke="#14b8a6" // Tailwind turquoise
+                                                strokeWidth={stroke}
+                                                strokeDasharray={circ}
+                                                strokeDashoffset={circ - circ * percent}
+                                                strokeLinecap="round"
+                                                style={{ transition: 'stroke-dashoffset 0.3s' }}
+                                            />
+                                        </svg>
+                                        <span className="text-xs text-text-secondary font-medium w-auto text-left">{completed}/{total}</span>
+                                    </span>
+                                );
+                            })()}
                             <p className="text-text-secondary text-sm">Subtask</p>
                             <svg 
                                 className={`w-3 h-3 text-text-secondary transition-transform duration-200 ${isSubTasksCollapsed ? 'rotate-[-90deg]' : 'rotate-90'}`} 

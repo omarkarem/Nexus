@@ -179,7 +179,7 @@ function ListCard({ list, editList, deleteList }) {
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-text-secondary mb-2 text-sm font-medium">
                   Description (Optional)
                 </label>
@@ -190,7 +190,7 @@ function ListCard({ list, editList, deleteList }) {
                   placeholder="Add a description..."
                   rows="3"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-text-secondary mb-2 text-sm font-medium">
@@ -219,13 +219,13 @@ function ListCard({ list, editList, deleteList }) {
                 <button
                   type="button"
                   onClick={handleEditCancel}
-                  className="px-4 py-2 bg-glass-bg border border-glass-border rounded-lg text-text-secondary hover:text-text-primary transition-colors duration-300"
+                  className="w-1/2 px-4 py-2 bg-glass-bg border border-glass-border rounded-full text-text-secondary hover:text-text-primary transition-colors duration-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-turquoise text-primary font-semibold rounded-lg transition-all duration-300 hover:scale-105"
+                  className="w-1/2 px-4 py-2 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 hover:scale-105"
                 >
                   Save Changes
                 </button>

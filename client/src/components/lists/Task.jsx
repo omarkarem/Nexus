@@ -147,13 +147,13 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                     {/* Initial Badge */}
                     {!isEditing && (
                         <span className={`text-white text-[10px] py-1 px-2 ${
-                            currentList?.isAllLists && task.listInfo ? 
-                                getColorClass(task.listInfo.color) : 
-                                getColorClass(currentList.color)
+                            currentList?.isAllLists
+                                ? (task.listInfo ? getColorClass(task.listInfo.color) : 'bg-gray-400')
+                                : getColorClass(currentList.color)
                         } backdrop-blur-glass rounded-full group-hover:hidden flex-shrink-0`}>
-                            {currentList?.isAllLists && task.listInfo ? 
-                                task.listInfo.title.slice(0, 1) : 
-                                currentList.title.slice(0, 1)
+                            {currentList?.isAllLists
+                                ? (task.listInfo ? task.listInfo.title.slice(0, 1) : '?')
+                                : currentList.title.slice(0, 1)
                             }
                         </span>
                     )}

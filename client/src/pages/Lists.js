@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import useListData from '../hooks/useListData';
 import ListCard from '../components/lists/ListCard';
-import CreateListCard from '../components/lists/CreateListCard';
+import CreateListCard, { CreateListModal } from '../components/lists/CreateListCard';
 
 function Lists() {
   const { lists, loading, error, createList, editList, deleteList } = useListData();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   if (loading) {
     return (
@@ -37,18 +38,8 @@ function Lists() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Lists Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-        {/* Existing Lists */}
-        {lists.map((list) => (
-          <ListCard key={list.id} list={list} editList={editList} deleteList={deleteList} />
-        ))}
-        {/* Create New List Card */}
-        <CreateListCard createList={createList} />
-      </div>
-
-      {/* Empty State (if no lists) */}
-      {lists.length === 0 && !loading && (
+      {/* Empty State (if no lists and no error) */}
+      {lists.length === 0 && !loading && !error && (
         <div className="text-center py-8 sm:py-12">
           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-glass rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,10 +51,22 @@ function Lists() {
             Create your first list to start organizing your tasks and boost your productivity.
           </p>
           <button
-          onClick={() => createList('New List', 'blue')}
-          className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20 text-sm sm:text-base">
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-turquoise text-primary font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-turquoise/20 text-sm sm:text-base">
             Create Your First List
           </button>
+          <CreateListModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} createList={createList} />
+        </div>
+      )}
+      {/* Lists Grid (only if lists exist) */}
+      {lists.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+          {/* Existing Lists */}
+          {lists.map((list) => (
+            <ListCard key={list.id} list={list} editList={editList} deleteList={deleteList} />
+          ))}
+          {/* Create New List Card */}
+          <CreateListCard createList={createList} />
         </div>
       )}
     </div>

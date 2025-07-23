@@ -1,12 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Reorder, AnimatePresence, motion } from 'framer-motion';
 import AddTask from './AddTask';
 import Task from './Task';
+import ReactDOM from 'react-dom';
 
 const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComplete, updateTaskTitle, deleteTask, updateTaskNote, addTask, listOptions, currentList, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, moveTask }) => {
     const [draggedTask, setDraggedTask] = useState(null); // Track What is being dragged
     const [isHovering, setIsHovering] = useState(false);
     const boardRef = useRef(null);
+
+    // --- Drag Preview State ---
+    const [isDragPreviewVisible, setIsDragPreviewVisible] = useState(false);
+    const [dragPreviewPosition, setDragPreviewPosition] = useState({ x: 0, y: 0 });
+    const [draggedTaskForPreview, setDraggedTaskForPreview] = useState(null);
+    // --- End Drag Preview State ---
+    // Store pointer offset for accurate ghost positioning
+    const pointerOffsetRef = useRef({ x: 0, y: 0 });
+    // Track a task that is pending move out of this board
+    const [pendingMoveTaskId, setPendingMoveTaskId] = useState(null);
 
     // Check if we're in All Lists view
     const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
@@ -70,6 +81,48 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
         moveTask(validTasks[0].id, boardId, boardId, 0, listId, validTasks);
     };
 
+    // Capture pointer position for ghost preview
+    const handlePointerDown = (event, task) => {
+        // Get bounding rect of the task element
+        const taskElem = event.currentTarget;
+        const rect = taskElem.getBoundingClientRect();
+        // Calculate offset between pointer and top-left of the task
+        pointerOffsetRef.current = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+        // Set initial drag preview position
+        setDragPreviewPosition({ x: event.clientX, y: event.clientY });
+    };
+
+    // Handle drag start
+    const handleDragStart = (task) => {
+        setDraggedTask(task);
+        setDraggedTaskForPreview(task);
+        setIsDragPreviewVisible(true);
+        // Listen to mousemove for preview
+        const handleMouseMove = (e) => {
+            setDragPreviewPosition({ x: e.clientX, y: e.clientY });
+        };
+        document.addEventListener('mousemove', handleMouseMove);
+        // Store cleanup on window for drag end
+        window.__nexusDragPreviewCleanup = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+        };
+    };
+
+    // Handle drag end  
+    const handleDragEnd = () => {
+        setDraggedTask(null);
+        setIsHovering(false);
+        setIsDragPreviewVisible(false);
+        setDraggedTaskForPreview(null);
+        if (window.__nexusDragPreviewCleanup) {
+            window.__nexusDragPreviewCleanup();
+            window.__nexusDragPreviewCleanup = null;
+        }
+    };
+
     // Handle cross-board drag end
     const handleCrossBoardDragEnd = (event, info, task) => {
         const { point } = info;
@@ -88,22 +141,19 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
             if (window.moveTaskCrossBoard) {
                 window.moveTaskCrossBoard(task.id, boardId, targetBoardId, listId);
             }
+            // Mark this task as pending move out
+            setPendingMoveTaskId(task.id);
         }
         
         // Reset states
         setDraggedTask(null);
         setIsHovering(false);
-    };
-
-    // Handle drag start
-    const handleDragStart = (task) => {
-        setDraggedTask(task);
-    };
-
-    // Handle drag end  
-    const handleDragEnd = () => {
-        setDraggedTask(null);
-        setIsHovering(false);
+        setIsDragPreviewVisible(false);
+        setDraggedTaskForPreview(null);
+        if (window.__nexusDragPreviewCleanup) {
+            window.__nexusDragPreviewCleanup();
+            window.__nexusDragPreviewCleanup = null;
+        }
     };
 
     // Monitor mouse position during drag to show hover effects
@@ -134,6 +184,13 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
         }
     }, [draggedTask, boardId]);
 
+    // When tasks update, clear pendingMoveTaskId if the task is no longer present
+    useEffect(() => {
+        if (pendingMoveTaskId && !tasks.some(t => t.id === pendingMoveTaskId)) {
+            setPendingMoveTaskId(null);
+        }
+    }, [tasks, pendingMoveTaskId]);
+
     return(
         <div 
             ref={boardRef}
@@ -142,6 +199,45 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                 isHovering && draggedTask ? 'ring-2 ring-turquoise/50 bg-turquoise/5' : ''
             }`}
         >
+            {/* --- Drag Preview Ghost Copy (Portal) --- */}
+            {isDragPreviewVisible && draggedTaskForPreview && ReactDOM.createPortal(
+                <motion.div
+                    style={{
+                        position: 'fixed',
+                        left: dragPreviewPosition.x - pointerOffsetRef.current.x,
+                        top: dragPreviewPosition.y - pointerOffsetRef.current.y,
+                        pointerEvents: 'none',
+                        opacity: 0.9,
+                        zIndex: 99999,
+                        transform: 'scale(1.05) rotate(2deg)',
+                        width: '320px',
+                        maxWidth: '90vw',
+                    }}
+                    initial={{ scale: 1, opacity: 0.8 }}
+                    animate={{ scale: 1.05, opacity: 0.9 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                >
+                    <Task
+                        task={draggedTaskForPreview}
+                        index={0}
+                        toggleTaskComplete={() => {}}
+                        boardId={boardId}
+                        updateTaskTitle={() => {}}
+                        deleteTask={() => {}}
+                        updateTaskNote={() => {}}
+                        addSubTask={() => {}}
+                        toggleSubTaskComplete={() => {}}
+                        deleteSubtask={() => {}}
+                        updateSubtaskTitle={() => {}}
+                        listId={listId}
+                        currentList={currentList}
+                        isGhosting={false}
+                    />
+                </motion.div>,
+                document.body
+            )}
+            {/* --- End Drag Preview Ghost Copy (Portal) --- */}
+
             <div className="flex flex-col items-center">
                 <div className="w-full flex items-center">
                     <div className="flex items-center">
@@ -199,7 +295,6 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                             layoutId={`task-${task.id}`}
                             whileDrag={{ 
                                 scale: 1.05, 
-                                rotate: 3,
                                 zIndex: 999,
                                 boxShadow: "0 15px 40px rgba(0,0,0,0.4)",
                                 cursor: 'grabbing'
@@ -218,6 +313,7 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                             style={{
                                 listStyle: 'none'
                             }}
+                            onPointerDown={e => handlePointerDown(e, task)}
                             onDragStart={() => handleDragStart(task)}
                             onDragEnd={(event, info) => {
                                 // Check if this was a cross-board drag
@@ -240,6 +336,10 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                                 updateSubtaskTitle={updateSubtaskTitle}
                                 listId={listId}
                                 currentList={currentList}
+                                isGhosting={
+                                    (isDragPreviewVisible && draggedTaskForPreview && draggedTaskForPreview.id === task.id)
+                                    || pendingMoveTaskId === task.id
+                                }
                             />
                         </Reorder.Item>
                     ))}

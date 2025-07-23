@@ -3,7 +3,7 @@ import Note from "./Note";
 import SubTask from "./SubTask";
 import { getColorClass } from '../../utils/listUtils';
 
-const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, updateTaskNote, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, currentList, index }) => {
+const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, updateTaskNote, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, currentList, index, isGhosting = false }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(task.title);
     const [isNoteOpen, setIsNoteOpen] = useState(false);
@@ -85,7 +85,8 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
 
 
     return (
-        <div className="group p-4 bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl hover:bg-gradient-glass transition-all duration-200">
+        <div className="group p-4 bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl hover:bg-gradient-glass transition-all duration-200"
+             style={{ opacity: isGhosting ? 0 : 1, transition: 'opacity 0.1s' }}>
             {/* Main task row */}
             <div className="flex items-center justify-between">
                 {/* Left side: Checkbox + Title */}

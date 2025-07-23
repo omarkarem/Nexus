@@ -134,7 +134,7 @@ const useListData = () => {
   };
 
   // Task management functions - now using real API calls
-  const toggleTaskComplete = async (taskId, boardId, listId) => {
+  const toggleTaskComplete = (taskId, boardId, listId) => {
     // Get current task to determine new completion status
     const list = lists.find(l => l.id === listId);
     const task = list?.tasks.find(t => t.id === taskId);
@@ -143,70 +143,56 @@ const useListData = () => {
     const newCompletedStatus = !task.completed;
     const newBoard = newCompletedStatus ? 'Done' : (task.lastBoard || task.originalBoard || boardId);
     const isAllListsView = list?.isAllLists || list?.title === 'All Lists';
+    const originalListId = task.listInfo?.id || task.listId || listId;
 
-    console.log('🔄 Toggling task completion:', {
-      taskId,
-      taskTitle: task.title,
-      currentList: list.title,
-      isAllLists: isAllListsView,
-      currentListInfo: task.listInfo,
-      newCompletedStatus,
-      newBoard
-    });
-
-    try {
-      // Update via API
-      const updatedTask = await apiUpdateTask(taskId, {
-        completed: newCompletedStatus,
-        board: newBoard
-      });
-
-      console.log('✅ API response:', updatedTask);
-
-      if (updatedTask) {
-        // Update local state in ALL lists (sync changes everywhere)
-        setLists(prevLists => 
-          prevLists.map(list => {
-            // Update the task in every list where it appears
-            const hasTask = list.tasks.some(t => t.id === taskId);
-            if (!hasTask) return list;
-            
-            return {
-              ...list,
-              tasks: list.tasks.map(t => {
-                if (t.id === taskId) {
-                  if (list.isAllLists || list.title === 'All Lists') {
-                    // For All Lists view, preserve the listInfo field
-                    const taskWithListInfo = {
-                      ...updatedTask,
-                      listInfo: t.listInfo // Preserve the original listInfo
-                    };
-                    console.log('🔄 Preserving listInfo in All Lists:', {
-                      taskId,
-                      originalListInfo: t.listInfo,
-                      preservedListInfo: taskWithListInfo.listInfo
-                    });
-                    return taskWithListInfo;
-                  } else {
-                    // For regular lists, use the updated task directly
-                    return updatedTask;
-                  }
-                }
-                return t;
-              })
-            };
-          })
-        );
-
-        // If we're in All Lists view, refresh the data to ensure listInfo is correct
-        if (isAllListsView) {
-          console.log('🔄 Refreshing All Lists data after task update...');
-          setTimeout(() => refreshAllListsData(), 100);
+    // Optimistic UI update: update in All Lists, original list, and Done board if completed
+    setLists(prevLists =>
+      prevLists.map(l => {
+        // Remove from all boards
+        const filteredTasks = l.tasks.filter(t => t.id !== taskId);
+        const isAllLists = l.isAllLists || l.title === 'All Lists';
+        const isOriginalList = l.id === originalListId;
+        const isDoneBoard = newCompletedStatus && isOriginalList && newBoard === 'Done';
+        if (isAllLists || isOriginalList || isDoneBoard) {
+          return {
+            ...l,
+            tasks: [
+              ...filteredTasks,
+              { ...task, completed: newCompletedStatus, board: newBoard }
+            ]
+          };
         }
+        return {
+          ...l,
+          tasks: filteredTasks
+        };
+      })
+    );
+
+    // API call in background
+    (async () => {
+      try {
+        const updatedTask = await apiUpdateTask(taskId, {
+          completed: newCompletedStatus,
+          board: newBoard
+        });
+        if (updatedTask) {
+          // Update local state in ALL lists (sync changes everywhere)
+          setLists(prevLists =>
+            prevLists.map(l => ({
+              ...l,
+              tasks: l.tasks.map(t =>
+                t.id === taskId
+                  ? { ...updatedTask, listInfo: t.listInfo }
+                  : t
+              )
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error toggling task completion:', error);
       }
-    } catch (error) {
-      console.error('Error toggling task completion:', error);
-    }
+    })();
   };
 
   const updateTaskTitle = async (taskId, newTitle, listId) => {
@@ -493,7 +479,7 @@ const useListData = () => {
   };
 
   // Handle same-board reordering with Framer Motion
-  const moveTask = useCallback(async (taskId, sourceBoard, targetBoard, dropIndex, listId, newOrderedTasks) => {
+  const moveTask = useCallback((taskId, sourceBoard, targetBoard, dropIndex, listId, newOrderedTasks) => {
     const currentList = lists.find(l => l.id === listId);
     const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
     
@@ -530,92 +516,97 @@ const useListData = () => {
 
     // Sync with API in background (for reordering)
     if (newOrderedTasks && sourceBoard === targetBoard) {
-      try {
-        if (isAllListsView) {
-          // Use All Lists reorder API
-          const taskUpdates = newOrderedTasks.map((task, index) => ({
-            taskId: task.id,
-            allListsOrder: index
-          }));
-          
-          console.log('🔄 Frontend: Sending All Lists reorder request:', taskUpdates);
-          const success = await apiReorderTasksAllLists(taskUpdates);
-          
-          if (success) {
-            console.log('✅ Frontend: All Lists reorder API call successful');
+      (async () => {
+        try {
+          if (isAllListsView) {
+            // Use All Lists reorder API
+            const taskUpdates = newOrderedTasks.map((task, index) => ({
+              taskId: task.id,
+              allListsOrder: index
+            }));
+            console.log('🔄 Frontend: Sending All Lists reorder request:', taskUpdates);
+            const success = await apiReorderTasksAllLists(taskUpdates);
+            if (success) {
+              console.log('✅ Frontend: All Lists reorder API call successful');
+            } else {
+              console.error('❌ Frontend: All Lists reorder API call failed');
+            }
           } else {
-            console.error('❌ Frontend: All Lists reorder API call failed');
+            // Use regular reorder API
+            const taskUpdates = newOrderedTasks.map((task, index) => ({
+              taskId: task.id,
+              order: index
+            }));
+            console.log('🔄 Frontend: Sending regular reorder request:', taskUpdates);
+            const success = await apiReorderTasks(taskUpdates);
+            if (success) {
+              console.log('✅ Frontend: Regular reorder API call successful');
+            } else {
+              console.error('❌ Frontend: Regular reorder API call failed');
+            }
           }
-        } else {
-          // Use regular reorder API
-          const taskUpdates = newOrderedTasks.map((task, index) => ({
-            taskId: task.id,
-            order: index
-          }));
-          
-          console.log('🔄 Frontend: Sending regular reorder request:', taskUpdates);
-          const success = await apiReorderTasks(taskUpdates);
-          
-          if (success) {
-            console.log('✅ Frontend: Regular reorder API call successful');
-          } else {
-            console.error('❌ Frontend: Regular reorder API call failed');
-          }
+        } catch (error) {
+          console.error('❌ Frontend: Error syncing task order with API:', error);
         }
-      } catch (error) {
-        console.error('❌ Frontend: Error syncing task order with API:', error);
-      }
+      })();
     }
   }, [lists]);
 
   // Cross-board movement function
-  const moveTaskCrossBoard = useCallback(async (taskId, sourceBoard, targetBoard, listId) => {
+  const moveTaskCrossBoard = useCallback((taskId, sourceBoard, targetBoard, listId) => {
     console.log('🔄 Cross-board move:', { taskId, sourceBoard, targetBoard });
-    
     // Get current task from any list
     const task = lists.flatMap(l => l.tasks).find(t => t.id === taskId);
     if (!task) return;
-
     // Determine completion status based on target board
     const completedStatus = targetBoard === 'Done' ? true : 
                           targetBoard !== 'Done' && sourceBoard === 'Done' ? false : 
                           task.completed;
-
-    try {
-      // Move via API
-      const updatedTask = await apiMoveTask(taskId, targetBoard, 0, completedStatus);
-
-      if (updatedTask) {
-        // Update local state in ALL lists (sync board changes everywhere)
-        setLists(prevLists =>
-          prevLists.map(list => {
-            // Update the task in every list where it appears
-            const hasTask = list.tasks.some(t => t.id === taskId);
-            if (!hasTask) return list;
-            
-            return {
-              ...list,
-              tasks: list.tasks.map(t => {
-                if (t.id === taskId) {
-                  // For All Lists view, preserve the listInfo field
-                  if (list.isAllLists || list.title === 'All Lists') {
-                    return {
-                      ...updatedTask,
-                      listInfo: t.listInfo // Preserve the original listInfo
-                    };
-                  } else {
-                    return updatedTask;
-                  }
-                }
-                return t;
-              })
-            };
-          })
-        );
+    const originalListId = task.listInfo?.id || task.listId || listId;
+    // 1. UI update: update in All Lists, original list, and Done board if completed
+    setLists(prevLists =>
+      prevLists.map(l => {
+        // Remove from all boards
+        const filteredTasks = l.tasks.filter(t => t.id !== taskId);
+        const isAllLists = l.isAllLists || l.title === 'All Lists';
+        const isOriginalList = l.id === originalListId;
+        const isDoneBoard = completedStatus && isOriginalList && targetBoard === 'Done';
+        if (isAllLists || isOriginalList || isDoneBoard) {
+          return {
+            ...l,
+            tasks: [
+              ...filteredTasks,
+              { ...task, board: targetBoard, completed: completedStatus }
+            ]
+          };
+        }
+        return {
+          ...l,
+          tasks: filteredTasks
+        };
+      })
+    );
+    // 2. API call in background
+    (async () => {
+      try {
+        const updatedTask = await apiMoveTask(taskId, targetBoard, 0, completedStatus);
+        // Optionally, update state again with any backend changes
+        if (updatedTask) {
+          setLists(prevLists =>
+            prevLists.map(l => ({
+              ...l,
+              tasks: l.tasks.map(t =>
+                t.id === taskId
+                  ? { ...updatedTask, listInfo: t.listInfo }
+                  : t
+              )
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error moving task across boards:', error);
       }
-    } catch (error) {
-      console.error('Error moving task across boards:', error);
-    }
+    })();
   }, [lists]);
 
   // Expose moveTaskCrossBoard globally for Task components

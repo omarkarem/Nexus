@@ -25,15 +25,15 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
     // Get color class based on color
     const getColorClass = (colorName) => {
         const colorMap = {
-            red: 'bg-red-500',
+          red: 'bg-red-500',
             orange: 'bg-orange-500',
-            yellow: 'bg-yellow-500',
-            green: 'bg-green-500',
+          yellow: 'bg-yellow-500',
+          green: 'bg-green-500',
             teal: 'bg-teal-500',
-            blue: 'bg-blue-500',
+          blue: 'bg-blue-500',
             indigo: 'bg-indigo-500',
-            purple: 'bg-purple-500',
-            pink: 'bg-pink-500',
+          purple: 'bg-purple-500',
+          pink: 'bg-pink-500',
             rose: 'bg-rose-500',
             gray: 'bg-gray-500',
             black: 'bg-black'

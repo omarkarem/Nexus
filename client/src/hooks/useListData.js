@@ -236,24 +236,22 @@ const useListData = () => {
   };
 
   const deleteTask = async (taskId, boardId, listId) => {
+    // Optimistically update UI: remove from all relevant lists immediately
+    setLists(prevLists =>
+      prevLists.map(list =>
+        list.id === listId ? {
+          ...list,
+          tasks: list.tasks.filter(task => task.id !== taskId)
+        } : list.isAllLists || list.title === 'All Lists' ? {
+          ...list,
+          tasks: list.tasks.filter(task => task.id !== taskId)
+        } : list
+      )
+    );
     try {
       // Delete via API
-      const success = await apiDeleteTask(taskId);
-
-      if (success) {
-        // Update local state - remove from both the original list and All Lists
-        setLists(prevLists =>
-          prevLists.map(list => 
-            list.id === listId ? {
-              ...list, 
-              tasks: list.tasks.filter(task => task.id !== taskId)
-            } : list.isAllLists || list.title === 'All Lists' ? {
-              ...list,
-              tasks: list.tasks.filter(task => task.id !== taskId)
-            } : list
-          )
-        );
-      }
+      await apiDeleteTask(taskId);
+      // If API fails, you could restore the task here (not implemented)
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -393,6 +391,23 @@ const useListData = () => {
     const subTask = task?.subTasks?.find(st => st.id === subTaskId);
     if (!subTask) return;
 
+    // Optimistically update UI: toggle completed state instantly
+    setLists(prevLists =>
+      prevLists.map(list =>
+        list.id === listId ? {
+          ...list,
+          tasks: list.tasks.map(task =>
+            task.id === taskId ? {
+              ...task,
+              subTasks: task.subTasks?.map(st =>
+                st.id === subTaskId ? { ...st, completed: !st.completed } : st
+              )
+            } : task
+          )
+        } : list
+      )
+    );
+
     try {
       // Update via API
       const updatedSubTask = await apiUpdateSubTask(taskId, subTaskId, {
@@ -400,7 +415,7 @@ const useListData = () => {
       });
 
       if (updatedSubTask) {
-        // Update local state
+        // Update local state with any backend changes
         setLists(prevLists =>
           prevLists.map(list =>
             list.id === listId ? {
@@ -423,26 +438,24 @@ const useListData = () => {
   };
 
   const deleteSubtask = async (parentTaskId, subtaskId, listId) => {
+    // Optimistically update UI: remove subtask instantly
+    setLists(prevLists =>
+      prevLists.map(list =>
+        list.id === listId ? {
+          ...list,
+          tasks: list.tasks.map(task =>
+            task.id === parentTaskId ? {
+              ...task,
+              subTasks: task.subTasks?.filter(subtask => subtask.id !== subtaskId)
+            } : task
+          )
+        } : list
+      )
+    );
     try {
       // Delete via API
-      const success = await apiDeleteSubTask(parentTaskId, subtaskId);
-
-      if (success) {
-        // Update local state
-        setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === listId ? {
-              ...list,
-              tasks: list.tasks.map(task =>
-                task.id === parentTaskId ? {
-                  ...task,
-                  subTasks: task.subTasks?.filter(subtask => subtask.id !== subtaskId)
-                } : task
-              )
-            } : list
-          )
-        );
-      }
+      await apiDeleteSubTask(parentTaskId, subtaskId);
+      // If API fails, you could restore the subtask here (not implemented)
     } catch (error) {
       console.error('Error deleting subtask:', error);
     }

@@ -18,6 +18,7 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
     const pointerOffsetRef = useRef({ x: 0, y: 0 });
     // Track a task that is pending move out of this board
     const [pendingMoveTaskId, setPendingMoveTaskId] = useState(null);
+    const [isAdding, setIsAdding] = useState(false);
 
     // Check if we're in All Lists view
     const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
@@ -243,15 +244,20 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                     <div className="flex items-center">
                     <h3 className='text-lg sm:text-xl lg:text-2xl'>{name}</h3>
                         {name === 'Done' && (
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-500 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        //     <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-500 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        //   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        // </svg>
+                        <></>
                       )}
                     </div>
 
-                    
                     {boardId !== 'Done' && (
-                        <div className='flex items-center ml-auto text-xl sm:text-2xl lg:text-3xl'>+</div>
+                        <button
+                        className='flex items-center ml-auto text-xl sm:text-2xl lg:text-3xl'
+                        onClick={() => setIsAdding(true)}
+                        title="Add Task"
+                        >+
+                        </button>
                     )}
                 </div>
 
@@ -366,7 +372,15 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
 
                 {/*Add Task - Only show for non-Done boards */}
                 {boardId !== 'Done' && (
-                    <AddTask boardId={boardId} addTask={addTask} listOptions={listOptions} currentList={currentList} />
+                    <AddTask 
+                        boardId={boardId} 
+                        addTask={addTask} 
+                        listOptions={listOptions} 
+                        currentList={currentList} 
+                        addSubTask={addSubTask}
+                        isAdding={isAdding}
+                        setIsAdding={setIsAdding}
+                    />
                 )}
 
                 {/* Empty state for today board */}

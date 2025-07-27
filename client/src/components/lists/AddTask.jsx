@@ -1,11 +1,15 @@
 import { useState } from "react";
 import ListDropdown from "./ListDropdown";
 
-const AddTask = ({ boardId, addTask, listOptions, currentList, addSubTask }) => {
-  const [isAdding, setIsAdding] = useState(false);
+const AddTask = ({ boardId, addTask, listOptions, currentList, addSubTask, isAdding: isAddingProp, setIsAdding: setIsAddingProp }) => {
+  const [internalIsAdding, internalSetIsAdding] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedList, setSelectedList] = useState(currentList.id);
 
+  // Use controlled props if provided, otherwise fallback to internal state
+  const isAdding = typeof isAddingProp === 'boolean' ? isAddingProp : internalIsAdding;
+  const setIsAdding = setIsAddingProp || internalSetIsAdding;
+  
   // Don't allow adding tasks directly to "All Lists" - redirect to a real list
   const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
   

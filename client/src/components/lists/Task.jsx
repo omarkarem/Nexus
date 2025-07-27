@@ -69,7 +69,8 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
         if (subTaskText.trim()) {
             addSubTask(task.id, subTaskText.trim());
             setSubTaskText('');
-            setIsAddingSubTask(false);
+            // for making add subtask close after adding a subtask 
+            // setIsAddingSubTask(false);
         }
     };
 

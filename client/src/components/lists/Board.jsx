@@ -3,8 +3,9 @@ import { Reorder, AnimatePresence, motion } from 'framer-motion';
 import AddTask from './AddTask';
 import Task from './Task';
 import ReactDOM from 'react-dom';
+import ConfirmationModal from './ConfirmationModal';
 
-const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComplete, updateTaskTitle, deleteTask, updateTaskNote, addTask, listOptions, currentList, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, moveTask }) => {
+const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComplete, updateTaskTitle, deleteTask, updateTaskNote, addTask, listOptions, currentList, addSubTask, toggleSubTaskComplete, deleteSubtask, updateSubtaskTitle, listId, moveTask, deleteAllCompletedTasks }) => {
     const [draggedTask, setDraggedTask] = useState(null); // Track What is being dragged
     const [isHovering, setIsHovering] = useState(false);
     const boardRef = useRef(null);
@@ -19,6 +20,11 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
     // Track a task that is pending move out of this board
     const [pendingMoveTaskId, setPendingMoveTaskId] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
+    
+    // Modal state for delete confirmation
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [completedTasksCount, setCompletedTasksCount] = useState(0);
+    const [showNoTasksModal, setShowNoTasksModal] = useState(false);
 
     // Check if we're in All Lists view
     const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
@@ -243,17 +249,32 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                 <div className="w-full flex items-center">
                     <div className="flex items-center">
                     <h3 className='text-lg sm:text-xl lg:text-2xl'>{name}</h3>
-                        {name === 'Done' && (
-                        //     <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-500 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        //   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        // </svg>
-                        <></>
-                      )}
                     </div>
-
+                    {name === 'Done' && (
+                        <button 
+                            className='flex items-center ml-auto text-red-500 hover:text-red-700 transition-colors duration-200'
+                            onClick={() => {
+                                const completedTasks = tasks.filter(task => task.completed);
+                                if (completedTasks.length === 0) {
+                                    // Show modal instead of alert for "no tasks" case
+                                    setShowNoTasksModal(true);
+                                    return;
+                                }
+                                
+                                // Set count and show modal
+                                setCompletedTasksCount(completedTasks.length);
+                                setShowDeleteModal(true);
+                            }}
+                            title="Delete All Completed Tasks"
+                        >
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                      )}
                     {boardId !== 'Done' && (
                         <button
-                        className='flex items-center ml-auto text-xl sm:text-2xl lg:text-3xl'
+                        className='flex items-center ml-auto text-xl sm:text-2xl lg:text-3xl hover:text-turquoise transition-colors duration-200'
                         onClick={() => setIsAdding(true)}
                         title="Add Task"
                         >+
@@ -398,6 +419,30 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                 )}
                 
             </div>
+            
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={() => deleteAllCompletedTasks(listId)}
+                title="Delete All Completed Tasks"
+                message={`Are you sure you want to delete all ${completedTasksCount} completed tasks? This action cannot be undone.`}
+                confirmText="Delete All"
+                cancelText="Cancel"
+                confirmButtonClass="bg-red-500 hover:bg-red-600 text-white"
+            />
+            
+            {/* No Tasks Modal */}
+            <ConfirmationModal
+                isOpen={showNoTasksModal}
+                onClose={() => setShowNoTasksModal(false)}
+                onConfirm={() => setShowNoTasksModal(false)}
+                title="No Completed Tasks"
+                message="There are no completed tasks to delete in this list."
+                confirmText="OK"
+                cancelText=""
+                confirmButtonClass="bg-blue-500 hover:bg-blue-600 text-white"
+            />
         </div>
     )
 }

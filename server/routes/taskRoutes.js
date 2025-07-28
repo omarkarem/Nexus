@@ -2,7 +2,7 @@ import express from 'express';
 import {
   getTasksByList, createTask, updateTask, deleteTask, moveTask, reorderTasks,
   getAllTasksForUser, reorderTasksAllLists,
-  addSubTask, updateSubTask, deleteSubTask
+  addSubTask, updateSubTask, deleteSubTask, deleteAllCompletedTasks
 } from '../controllers/taskController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -20,6 +20,9 @@ router.post('/', createTask);                   // POST /api/tasks
 router.put('/reorder', reorderTasks);           // PUT /api/tasks/reorder
 router.put('/reorder-all-lists', reorderTasksAllLists); // PUT /api/tasks/reorder-all-lists
 router.put('/:taskId/move', moveTask);          // PUT /api/tasks/:taskId/move
+
+// Delete all completed tasks for a list - MUST come before /:taskId routes
+router.delete('/list/:listId/completed', deleteAllCompletedTasks); // DELETE /api/tasks/list/:listId/completed
 
 // Generic task operations - MUST come after specific routes
 router.put('/:taskId', updateTask);             // PUT /api/tasks/:taskId

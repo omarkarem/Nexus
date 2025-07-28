@@ -31,7 +31,7 @@ function Login() {
         localStorage.setItem('token', data.token);
         
         // Redirect to dashboard
-        navigate('/app/dashboard');
+        navigate('/app/lists');
       } else {
         setError(data.message || 'Login failed');
       }

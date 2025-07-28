@@ -565,6 +565,55 @@ const reorderTasksAllLists = async (req, res) => {
   }
 };
 
+/**
+ * Delete all completed tasks for a specific list
+ * @route DELETE /api/tasks/list/:listId/completed
+ */
+const deleteAllCompletedTasks = async (req, res) => {
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`🗑️ [PERF-${requestId}] Starting deleteAllCompletedTasks request`);
+  
+  try {
+    const { listId } = req.params;
+    const startTime = Date.now();
+
+    // Check if this is an "All Lists" request
+    const list = await List.findById(listId);
+    let result;
+
+    if (list && (list.isAllLists || list.title === 'All Lists')) {
+      console.log(`🎯 [PERF-${requestId}] Deleting all completed tasks from All Lists view`);
+      // Delete all completed tasks for this user (from all lists)
+      result = await Task.deleteMany({ 
+        owner: req.user.id, 
+        completed: true 
+      });
+    } else {
+      console.log(`📝 [PERF-${requestId}] Deleting completed tasks from specific list: ${listId}`);
+      // Delete all completed tasks for this specific list and owner
+      result = await Task.deleteMany({ 
+        list: listId, 
+        owner: req.user.id, 
+        completed: true 
+      });
+    }
+
+    console.log(`✅ [PERF-${requestId}] Deleted ${result.deletedCount} completed tasks in ${Date.now() - startTime}ms`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} completed tasks`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error(`❌ [PERF-${requestId}] Error deleting completed tasks:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete completed tasks'
+    });
+  }
+};
+
 export { 
   getTasksByList, 
   createTask, 
@@ -576,5 +625,6 @@ export {
   reorderTasksAllLists,
   addSubTask, 
   updateSubTask, 
-  deleteSubTask 
+  deleteSubTask,
+  deleteAllCompletedTasks
 }; 

@@ -21,7 +21,8 @@ function ListDetail() {
     toggleSubTaskComplete,
     deleteSubtask,
     updateSubtaskTitle,
-    moveTask
+    moveTask,
+    deleteAllCompletedTasks
   } = useListData();
 
   // Find the current list
@@ -91,6 +92,7 @@ function ListDetail() {
         deleteSubtask={deleteSubtask}
         updateSubtaskTitle={updateSubtaskTitle}
         moveTask={moveTask}
+        deleteAllCompletedTasks={deleteAllCompletedTasks}
       />
     </div>
   );

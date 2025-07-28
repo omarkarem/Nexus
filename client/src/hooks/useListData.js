@@ -11,7 +11,8 @@ import {
   reorderTasksAllLists as apiReorderTasksAllLists,
   addSubTask as apiAddSubTask,
   updateSubTask as apiUpdateSubTask,
-  deleteSubTask as apiDeleteSubTask
+  deleteSubTask as apiDeleteSubTask,
+  deleteAllCompletedTasks as apiDeleteAllCompletedTasks
 } from '../utils/taskApi';
 
 const useListData = () => {
@@ -254,6 +255,72 @@ const useListData = () => {
       // If API fails, you could restore the task here (not implemented)
     } catch (error) {
       console.error('Error deleting task:', error);
+    }
+  };
+
+  const deleteAllCompletedTasks = async (listId) => {
+    console.log(`🗑️ [FRONTEND] Starting delete all completed tasks for list: ${listId}`);
+    const startTime = Date.now();
+
+    // Get completed tasks for optimistic update (before deletion)
+    const currentList = lists.find(list => list.id === listId);
+    const isAllListsView = currentList?.isAllLists || currentList?.title === 'All Lists';
+    
+    const completedTaskIds = currentList?.tasks
+      ?.filter(task => task.completed)
+      ?.map(task => task.id) || [];
+
+    console.log(`🗑️ [FRONTEND] Found ${completedTaskIds.length} completed tasks to delete (All Lists view: ${isAllListsView})`);
+
+    // Optimistically update UI: remove all completed tasks immediately
+    setLists(prevLists =>
+      prevLists.map(list => {
+        if (isAllListsView) {
+          // If deleting from All Lists view, remove ALL completed tasks from ALL lists
+          return {
+            ...list,
+            tasks: list.tasks.filter(task => !task.completed)
+          };
+        } else if (list.id === listId) {
+          // Remove completed tasks from current specific list only
+          return {
+            ...list,
+            tasks: list.tasks.filter(task => !task.completed)
+          };
+        } else if (list.isAllLists || list.title === 'All Lists') {
+          // Remove completed tasks from All Lists view (only for this specific list)
+          return {
+            ...list,
+            tasks: list.tasks.filter(task => 
+              !(task.completed && (task.listInfo?.id === listId || task.list === listId))
+            )
+          };
+        }
+        return list;
+      })
+    );
+
+    console.log(`🗑️ [FRONTEND] UI updated in ${Date.now() - startTime}ms`);
+
+    try {
+      // Delete via API
+      const apiStartTime = Date.now();
+      const result = await apiDeleteAllCompletedTasks(listId);
+      console.log(`🗑️ [FRONTEND] API call completed in ${Date.now() - apiStartTime}ms`);
+      
+      if (result.success) {
+        console.log(`✅ [FRONTEND] Successfully deleted ${result.deletedCount} completed tasks`);
+      } else {
+        console.error('❌ [FRONTEND] API failed:', result.message);
+        // Could restore tasks here if needed
+      }
+      
+      console.log(`🗑️ [FRONTEND] Total deleteAllCompletedTasks operation: ${Date.now() - startTime}ms`);
+      return result;
+    } catch (error) {
+      console.error('❌ [FRONTEND] Error deleting all completed tasks:', error);
+      // Could restore tasks here if needed
+      return { success: false, message: error.message };
     }
   };
 
@@ -649,7 +716,8 @@ const useListData = () => {
     editList,
     deleteList,
     moveTask,
-    moveTaskCrossBoard
+    moveTaskCrossBoard,
+    deleteAllCompletedTasks
   };
 };
 

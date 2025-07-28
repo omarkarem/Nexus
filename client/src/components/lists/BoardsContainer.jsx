@@ -14,7 +14,8 @@ const BoardsContainer = ({
   toggleSubTaskComplete,
   deleteSubtask,
   updateSubtaskTitle,
-  moveTask
+  moveTask,
+  deleteAllCompletedTasks
 }) => {
   return (
     <div className='w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'>
@@ -104,6 +105,7 @@ const BoardsContainer = ({
           updateSubtaskTitle={(taskId, subTaskId, newTitle) => updateSubtaskTitle(taskId, subTaskId, newTitle, listId)}
           listId={listId}
           moveTask={moveTask}
+          deleteAllCompletedTasks={deleteAllCompletedTasks}
         />
     </div>
   );

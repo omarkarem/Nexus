@@ -295,3 +295,23 @@ export const reorderTasksAllLists = async (taskUpdates) => {
     return false;
   }
 };
+
+/**
+ * Delete all completed tasks for a specific list
+ * @param {string} listId - List ID
+ * @returns {Promise<object>} - Result with success status and deleted count
+ */
+export const deleteAllCompletedTasks = async (listId) => {
+  try {
+    const response = await fetch(buildApiUrl(`/api/tasks/list/${listId}/completed`), {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error deleting all completed tasks:', error);
+    return { success: false, message: error.message };
+  }
+};

@@ -72,8 +72,8 @@ function Signup() {
           
           // Redirect after a short delay to show success message
           setTimeout(() => {
-            navigate('/app/dashboard');
-          }, 2000);
+            navigate('/app/lists');
+          }, 1000);
         }
       } else {
         setError(data.message || 'Registration failed');

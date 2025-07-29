@@ -145,7 +145,7 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                 </div>                
                 
                 {/* Right side: Initial Badge + Action buttons */}
-                <div className="flex items-center space-x-2 flex-shrink-0 overflow-hidden">
+                <div className="flex items-center space-x-2 flex-shrink-0 ">
                     {/* List Badge */}
                     {!isEditing && (
                         <div className={`text-white text-[10px] py-1 px-2  ${

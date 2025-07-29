@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 function CreateListModal({ isOpen, onClose, createList }) {
   const [formData, setFormData] = useState({
@@ -7,6 +7,9 @@ function CreateListModal({ isOpen, onClose, createList }) {
     color: 'blue'
   });
   const [errors, setErrors] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const colorOptions = [
     { name: 'red', class: 'bg-red-500', label: 'Red' },
@@ -25,6 +28,39 @@ function CreateListModal({ isOpen, onClose, createList }) {
 
   if (!isOpen) return null;
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors({...errors, image: 'Please select an image file'});
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({...errors, image: 'Image size must be less than 5MB'});
+        return;
+      }
+      
+      setSelectedImage(file);
+      setErrors({...errors, image: null});
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
@@ -37,15 +73,23 @@ function CreateListModal({ isOpen, onClose, createList }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    createList(formData.title.trim(), formData.color, formData.description.trim());
-    setFormData({ title: '', description: '', color: 'blue' });
-    setErrors({});
+    createList(formData.title.trim(), formData.color, formData.description.trim(), selectedImage);
+    resetForm();
     onClose();
   };
 
-  const handleCancel = () => {
+  const resetForm = () => {
     setFormData({ title: '', description: '', color: 'blue' });
     setErrors({});
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCancel = () => {
+    resetForm();
     onClose();
   };
 
@@ -64,6 +108,59 @@ function CreateListModal({ isOpen, onClose, createList }) {
         </div>
         <h2 className="flex justify-center text-xl font-semibold text-text-primary mb-6">Create New List</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Image Upload Section */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2 opacity-50">
+              List Icon (Optional)
+            </label>
+            <div className="flex items-center space-x-4">
+              {/* Image Preview or Default Icon */}
+              <div className="w-16 h-16 bg-glass-bg border-2 border-glass-border rounded-lg flex items-center justify-center overflow-hidden">
+                {imagePreview ? (
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              
+              {/* Upload/Remove Buttons */}
+              <div className="flex flex-col space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1 text-sm bg-glass border border-glass-border text-text-primary rounded-md hover:bg-glass-bg transition-colors"
+                >
+                  {selectedImage ? 'Change' : 'Upload'}
+                </button>
+                {selectedImage && (
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="px-3 py-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+            {errors.image && (
+              <p className="text-red-400 text-sm mt-1">{errors.image}</p>
+            )}
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2 opacity-50">
               Choose Color
@@ -91,7 +188,7 @@ function CreateListModal({ isOpen, onClose, createList }) {
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
               placeholder="Enter list name..."
-              className={`w-full p-3 bg-glass-bg border-2 border-glass-border rounded-lg text-black placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-turquoise focus:border-turquoise ${
+              className={`w-full p-3 bg-glass-bg border-2 border-glass-border rounded-lg text-white placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-turquoise focus:border-turquoise ${
                 errors.title ? 'border-red-500' : 'border-glass-border'
               }`}
               autoFocus

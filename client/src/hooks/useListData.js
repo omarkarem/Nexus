@@ -63,10 +63,10 @@ const useListData = () => {
   };
 
   // Create List
-  const createList = async (listTitle, listColor, description = '') => {
+  const createList = async (listTitle, listColor, description = '', imageFile = null) => {
     try {
-      console.log('🔄 Creating list:', { listTitle, listColor, description });
-      const newList = await apiCreateList(listTitle, listColor, description);
+      console.log('🔄 Creating list:', { listTitle, listColor, description, hasImage: !!imageFile });
+      const newList = await apiCreateList(listTitle, listColor, description, imageFile);
       console.log('✅ New list created:', newList);
       
       if (newList) {
@@ -82,9 +82,10 @@ const useListData = () => {
   };
 
   // Edit List
-  const editList = async (listId, newTitle, newColor, newDescription = '') => {
+  const editList = async (listId, newTitle, newColor, newDescription = '', imageFile = null) => {
     try {
-      const updatedList = await apiUpdateList(listId, newTitle, newColor, newDescription);
+      console.log('🔄 Editing list:', { listId, newTitle, newColor, newDescription, hasImage: !!imageFile });
+      const updatedList = await apiUpdateList(listId, newTitle, newColor, newDescription, imageFile);
       if (updatedList) {
         setLists(prevLists =>
           prevLists.map(list =>
@@ -93,6 +94,7 @@ const useListData = () => {
               title: updatedList.title,
               color: updatedList.color,
               description: updatedList.description,
+              imageUrl: updatedList.imageUrl,
               updatedAt: updatedList.updatedAt
             } : list
           )

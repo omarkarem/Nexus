@@ -468,7 +468,7 @@ const getAllTasksForUser = async (req, res) => {
   try {
     // Get all tasks for this user
     let tasks = await Task.find({ owner: req.user.id })
-      .populate('list', 'title color')
+      .populate('list', 'title color imageUrl')
       .sort({ board: 1, allListsOrder: 1 });
 
     // Check if any tasks don't have allListsOrder set
@@ -490,7 +490,7 @@ const getAllTasksForUser = async (req, res) => {
       
       // Re-fetch tasks with updated allListsOrder
       tasks = await Task.find({ owner: req.user.id })
-        .populate('list', 'title color')
+        .populate('list', 'title color imageUrl')
         .sort({ board: 1, allListsOrder: 1 });
         
       console.log('✅ Updated allListsOrder for existing tasks');
@@ -510,7 +510,8 @@ const getAllTasksForUser = async (req, res) => {
       listInfo: {
         id: task.list._id,
         title: task.list.title,
-        color: task.list.color
+        color: task.list.color,
+        imageUrl: task.list.imageUrl
       },
       subTasks: task.subTasks.map(subTask => ({
         id: subTask._id,

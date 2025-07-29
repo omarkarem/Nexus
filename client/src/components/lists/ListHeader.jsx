@@ -29,7 +29,6 @@ const ListHeader = ({
             onChange={onListChange}
             placeholder='Select List'
             className='w-full'
-            icon={<div className={`w-6 h-6 rounded-md ${getColorClass(currentList.color)}`}></div>}
           />
         </div>
       </div>

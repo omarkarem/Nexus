@@ -18,6 +18,10 @@ const listSchema = new mongoose.Schema({
     enum: ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'indigo', 'purple', 'pink', 'rose', 'gray', 'black'],
     default: 'blue'
   },
+  imageUrl: {
+    type: String,
+    default: null
+  },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

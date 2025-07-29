@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Get tasks by board from a list
 export const getTasksByBoard = (list, boardName) => {
   if (!list || !list.tasks) return [];
@@ -133,7 +135,15 @@ export const createListOptions = (lists) => {
   return lists.map(list => ({
     value: list.id,
     label: list.title,
-    icon: <div className={`w-4 h-4 rounded ${getColorClass(list.color)}`}></div>
+    imageUrl: list.imageUrl, // Add imageUrl for selected display
+    color: list.color, // Add color for selected display  
+    icon: list.imageUrl ? 
+      <img 
+        src={list.imageUrl} 
+        alt={`${list.title} icon`}
+        className="w-6 h-6 rounded object-cover"
+      /> :
+      <div className={`w-6 h-6 rounded ${getColorClass(list.color)}`}></div>
   }));
 };
 

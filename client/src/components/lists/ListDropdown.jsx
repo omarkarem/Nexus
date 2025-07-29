@@ -88,7 +88,7 @@ const ListDropdown = ({ options, value, onChange, placeholder, className, icon, 
         aria-expanded={isOpen}
       >
         <div className="flex items-center space-x-3">
-          {icon && <div className="flex-shrink-0">{icon}</div>}
+          {selectedOption?.icon && <div className="flex-shrink-0">{selectedOption.icon}</div>}
           <span className={`${selectedOption ? 'text-text-primary' : 'text-text-secondary'} font-medium`}>
             {displayValue}
           </span>

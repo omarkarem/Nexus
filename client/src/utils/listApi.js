@@ -30,14 +30,29 @@ export const fetchLists = async () => {
  * @param {string} title - List title
  * @param {string} color - List color
  * @param {string} description - List description
+ * @param {File|null} imageFile - Optional image file
  * @returns {Promise<object|null>} - Created list or null
  */
-export const createList = async (title, color, description = '') => {
+export const createList = async (title, color, description = '', imageFile = null) => {
   try {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('color', color);
+    formData.append('description', description);
+    
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    // For FormData, we need to exclude Content-Type to let browser set it with boundary
+    const headers = getAuthHeaders();
+    delete headers['Content-Type']; // Remove Content-Type for FormData
+
     const response = await fetch(buildApiUrl('/api/lists'), {
       method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ title, color, description })
+      headers: headers,
+      body: formData
     });
 
     const data = await response.json();
@@ -60,14 +75,29 @@ export const createList = async (title, color, description = '') => {
  * @param {string} title - New title
  * @param {string} color - New color
  * @param {string} description - New description
+ * @param {File|null} imageFile - Optional image file
  * @returns {Promise<object|null>} - Updated list or null
  */
-export const updateList = async (listId, title, color, description) => {
+export const updateList = async (listId, title, color, description, imageFile = null) => {
   try {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('color', color);
+    formData.append('description', description);
+    
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    // For FormData, we need to exclude Content-Type to let browser set it with boundary
+    const headers = getAuthHeaders();
+    delete headers['Content-Type']; // Remove Content-Type for FormData
+
     const response = await fetch(buildApiUrl(`/api/lists/${listId}`), {
       method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ title, color, description })
+      headers: headers,
+      body: formData
     });
 
     const data = await response.json();

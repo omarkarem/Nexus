@@ -146,18 +146,62 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                 
                 {/* Right side: Initial Badge + Action buttons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                    {/* Initial Badge */}
+                    {/* List Badge */}
                     {!isEditing && (
-                        <span className={`text-white text-[10px] py-1 px-2 ${
-                            currentList?.isAllLists
-                                ? (task.listInfo ? getColorClass(task.listInfo.color) : 'bg-gray-400')
-                                : getColorClass(currentList.color)
-                        } backdrop-blur-glass rounded-full group-hover:hidden flex-shrink-0`}>
-                            {currentList?.isAllLists
-                                ? (task.listInfo ? task.listInfo.title.slice(0, 1) : '?')
-                                : currentList.title.slice(0, 1)
-                            }
-                        </span>
+                        <div className={`text-white text-[10px] py-1 px-2 ${
+                            // Only show colored background if there's no image
+                            currentList?.isAllLists ? (
+                                task.listInfo?.imageUrl ? 'bg-transparent' : 
+                                (task.listInfo ? getColorClass(task.listInfo.color) : 'bg-gray-400')
+                            ) : (
+                                currentList.imageUrl ? 'bg-transparent' : getColorClass(currentList.color)
+                            )
+                        } backdrop-blur-glass ${
+                            // Only make it circular if there's no image
+                            currentList?.isAllLists ? (
+                                task.listInfo?.imageUrl ? 'rounded' : 'rounded-full'
+                            ) : (
+                                currentList.imageUrl ? 'rounded' : 'rounded-full'
+                            )
+                        } group-hover:hidden flex-shrink-0 flex items-center justify-center ${
+                            // Make it bigger when there's an image
+                            currentList?.isAllLists ? (
+                                task.listInfo?.imageUrl ? 'min-w-[24px] h-[24px]' : 'min-w-[20px] h-[20px]'
+                            ) : (
+                                currentList.imageUrl ? 'min-w-[24px] h-[24px]' : 'min-w-[20px] h-[20px]'
+                            )
+                        } overflow-hidden relative`}>
+                            {/* Show image if available, otherwise show initial */}
+                            {currentList?.isAllLists ? (
+                                task.listInfo?.imageUrl ? (
+                                    <img 
+                                        src={task.listInfo.imageUrl} 
+                                        alt={`${task.listInfo.title} icon`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            console.log('Image failed to load:', task.listInfo.imageUrl);
+                                            e.target.style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    task.listInfo ? task.listInfo.title.charAt(0).toUpperCase() : '?'
+                                )
+                            ) : (
+                                currentList.imageUrl ? (
+                                    <img 
+                                        src={currentList.imageUrl} 
+                                        alt={`${currentList.title} icon`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            console.log('Image failed to load:', currentList.imageUrl);
+                                            e.target.style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    currentList.title.charAt(0).toUpperCase()
+                                )
+                            )}
+                        </div>
                     )}
                     
                     {/* Action buttons */}

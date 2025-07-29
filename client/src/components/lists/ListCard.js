@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Dropdown from '../Dropdown';
 
 function ListCard({ list, editList, deleteList }) {
@@ -12,6 +12,9 @@ function ListCard({ list, editList, deleteList }) {
     description: list.description || ''
   });
   const [errors, setErrors] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   
   // Get color class based on color
   const getColorClass = (colorName) => {
@@ -47,6 +50,47 @@ function ListCard({ list, editList, deleteList }) {
     { name: 'black', class: 'bg-black', label: 'Black' }
   ];
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors({...errors, image: 'Please select an image file'});
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({...errors, image: 'Image size must be less than 5MB'});
+        return;
+      }
+      
+      setSelectedImage(file);
+      setErrors({...errors, image: null});
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const resetImageState = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!editFormData.title.trim()) {
@@ -62,6 +106,7 @@ function ListCard({ list, editList, deleteList }) {
       color: color,
       description: list.description || ''
     });
+    resetImageState();
     setIsEditModalOpen(true);
   };
 
@@ -73,9 +118,10 @@ function ListCard({ list, editList, deleteList }) {
     e.preventDefault();
     if (!validateForm()) return;
     
-    editList(list.id, editFormData.title.trim(), editFormData.color, editFormData.description.trim());
+    editList(list.id, editFormData.title.trim(), editFormData.color, editFormData.description.trim(), selectedImage);
     setIsEditModalOpen(false);
     setErrors({});
+    resetImageState();
   };
 
   const handleDeleteConfirm = () => {
@@ -90,6 +136,7 @@ function ListCard({ list, editList, deleteList }) {
       description: list.description || ''
     });
     setErrors({});
+    resetImageState();
     setIsEditModalOpen(false);
   };
 
@@ -107,7 +154,17 @@ function ListCard({ list, editList, deleteList }) {
       {/* List Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <div className={`w-6 h-6 rounded-md ${getColorClass(color)} mr-3`}></div>
+            {list.imageUrl ? (
+              <img 
+                src={list.imageUrl} 
+                alt={`${title} icon`}
+                className="w-6 h-6 rounded-md mr-3 object-cover"
+              />
+            ) : (
+              <div className={`w-6 h-6 rounded-md ${getColorClass(color)} mr-3 flex items-center justify-center text-white text-xs font-semibold`}>
+                {title.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h3 className="text-lg font-semibold text-text-primary group-hover:text-white transition-colors duration-300">
           {title}
         </h3>
@@ -176,6 +233,65 @@ function ListCard({ list, editList, deleteList }) {
                 />
                 {errors.title && (
                   <p className="text-gray-400 text-sm mt-1">{errors.title}</p>
+                )}
+              </div>
+
+              {/* Image Upload Section */}
+              <div>
+                <label className="block text-text-secondary mb-2 text-sm font-medium">
+                  List Icon (Optional)
+                </label>
+                <div className="flex items-center space-x-4">
+                  {/* Image Preview or Current/Default Icon */}
+                  <div className="w-16 h-16 bg-glass-bg border-2 border-glass-border rounded-lg flex items-center justify-center overflow-hidden">
+                    {imagePreview ? (
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : list.imageUrl ? (
+                      <img 
+                        src={list.imageUrl} 
+                        alt="Current icon" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-12 h-12 rounded-md ${getColorClass(color)} flex items-center justify-center text-white text-xs font-semibold`}>
+                        {title.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload/Remove Buttons */}
+                  <div className="flex flex-col space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1 text-sm bg-glass border border-glass-border text-text-primary rounded-md hover:bg-glass-bg transition-colors"
+                    >
+                      {selectedImage || list.imageUrl ? 'Change' : 'Upload'}
+                    </button>
+                    {(selectedImage || list.imageUrl) && (
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="px-3 py-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {errors.image && (
+                  <p className="text-red-400 text-sm mt-1">{errors.image}</p>
                 )}
               </div>
 

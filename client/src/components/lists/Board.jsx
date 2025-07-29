@@ -249,7 +249,7 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                 <div className="w-full flex items-center">
                     <div className="flex items-center">
                     <h3 className='text-lg sm:text-xl lg:text-2xl'>{name}</h3>
-                    </div>
+                </div>
                     {name === 'Done' && (
                         <button 
                             className='flex items-center ml-auto text-red-500 hover:text-red-700 transition-colors duration-200'
@@ -269,7 +269,7 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                         >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                        </svg>
                         </button>
                       )}
                     {boardId !== 'Done' && (
@@ -415,9 +415,9 @@ const Board = ({ name, borderColor, tasks = [], boardId, color, toggleTaskComple
                 {sortedTasks.length === 0 && !isHovering && boardId === 'Done' && (
                     <div className="flex flex-col mt-[292px] items-center justify-center h-20">
                         <p className="text-text-secondary/60 text-sm">All Clear</p>
-                    </div>
+                  </div>
                 )}
-                
+
             </div>
             
             {/* Delete Confirmation Modal */}

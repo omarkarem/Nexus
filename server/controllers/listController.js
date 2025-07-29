@@ -1,5 +1,6 @@
 import List from '../models/List.js';
 import Task from '../models/Task.js';
+import { uploadToS3, deleteFromS3 } from '../config/s3.js';
 
 // @desc    Get all lists for the current user
 // @route   GET /api/lists
@@ -38,6 +39,7 @@ const getLists = async (req, res) => {
                 title: list.title,
                 description: list.description,
                 color: list.color,
+                imageUrl: list.imageUrl,
                 isAllLists: list.isAllLists,
                 itemCount: tasks.length,
                 completedCount: completedCount,
@@ -89,6 +91,28 @@ const createList = async (req, res) => {
     const { title, color, description } = req.body;
     
     console.log('🔄 Creating list:', { title, color, description, userId: req.user.id });
+    console.log('📁 Uploaded file:', req.file ? req.file.originalname : 'No file');
+    
+    // Handle image upload if provided
+    let imageUrl = null;
+    if (req.file) {
+      try {
+        console.log('⬆️ Uploading image to S3...');
+        imageUrl = await uploadToS3(
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype,
+          'list-icons'
+        );
+        console.log('✅ Image uploaded successfully:', imageUrl);
+      } catch (uploadError) {
+        console.error('❌ S3 upload failed:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload image'
+        });
+      }
+    }
     
     // Check if this is the user's first list
     const existingListsCount = await List.countDocuments({ owner: req.user.id });
@@ -101,6 +125,7 @@ const createList = async (req, res) => {
       title: title.trim(),
       color: color || 'blue',
       description: description ? description.trim() : '',
+      imageUrl: imageUrl,
       owner: req.user.id
     });
 
@@ -125,6 +150,7 @@ const createList = async (req, res) => {
       title: list.title,
       description: list.description,
       color: list.color,
+      imageUrl: list.imageUrl,
       itemCount: 0,
       completedCount: 0,
       updatedAt: list.formattedUpdatedAt
@@ -154,6 +180,9 @@ const updateList = async (req,res) => {
     try {
         const { title, description, color } = req.body;
 
+        console.log('🔄 Updating list:', req.params.id, { title, description, color });
+        console.log('📁 Uploaded file:', req.file ? req.file.originalname : 'No file');
+
         const list = await List.findOne({ 
           _id: req.params.id, 
           owner: req.user.id 
@@ -165,11 +194,46 @@ const updateList = async (req,res) => {
             message: 'List not found'
           });
         }
+
+        // Handle image upload if provided
+        let newImageUrl = list.imageUrl; // Keep existing image by default
+        
+        if (req.file) {
+          try {
+            console.log('⬆️ Uploading new image to S3...');
+            newImageUrl = await uploadToS3(
+              req.file.buffer,
+              req.file.originalname,
+              req.file.mimetype,
+              'list-icons'
+            );
+            console.log('✅ New image uploaded successfully:', newImageUrl);
+            
+            // Delete old image if it exists
+            if (list.imageUrl) {
+              try {
+                console.log('🗑️ Deleting old image:', list.imageUrl);
+                await deleteFromS3(list.imageUrl);
+                console.log('✅ Old image deleted successfully');
+              } catch (deleteError) {
+                console.warn('⚠️ Failed to delete old image:', deleteError.message);
+                // Don't fail the update if old image deletion fails
+              }
+            }
+          } catch (uploadError) {
+            console.error('❌ S3 upload failed:', uploadError);
+            return res.status(500).json({
+              success: false,
+              message: 'Failed to upload image'
+            });
+          }
+        }
     
         // Update fields if provided
         if (title !== undefined) list.title = title.trim();
         if (description !== undefined) list.description = description.trim();
         if (color !== undefined) list.color = color;
+        if (newImageUrl !== list.imageUrl) list.imageUrl = newImageUrl;
     
         await list.save();
     
@@ -181,6 +245,7 @@ const updateList = async (req,res) => {
             title: list.title,
             description: list.description,
             color: list.color,
+            imageUrl: list.imageUrl,
             updatedAt: list.formattedUpdatedAt
           }
         });
@@ -205,6 +270,18 @@ const deleteList = async (req,res) => {
               success: false,
               message: 'List not found'
             });
+          }
+
+          // Delete image from S3 if it exists
+          if (list.imageUrl) {
+            try {
+              console.log('🗑️ Deleting list image from S3:', list.imageUrl);
+              await deleteFromS3(list.imageUrl);
+              console.log('✅ List image deleted successfully');
+            } catch (deleteError) {
+              console.warn('⚠️ Failed to delete list image:', deleteError.message);
+              // Don't fail the deletion if image deletion fails
+            }
           }
       
           // Delete all tasks in this list

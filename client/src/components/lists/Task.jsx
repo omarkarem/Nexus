@@ -145,10 +145,10 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
                 </div>                
                 
                 {/* Right side: Initial Badge + Action buttons */}
-                <div className="flex items-center space-x-2 flex-shrink-0">
+                <div className="flex items-center space-x-2 flex-shrink-0 overflow-hidden">
                     {/* List Badge */}
                     {!isEditing && (
-                        <div className={`text-white text-[10px] py-1 px-2 ${
+                        <div className={`text-white text-[10px] py-1 px-2  ${
                             // Only show colored background if there's no image
                             currentList?.isAllLists ? (
                                 task.listInfo?.imageUrl ? 'bg-transparent' : 

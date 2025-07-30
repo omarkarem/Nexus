@@ -150,6 +150,7 @@ function ListCard({ list, editList, deleteList }) {
 
   return (
     <>
+    <Link draggable={false} to={`/app/lists/${list.id}`} className="block">
       <div className="h-72 group relative bg-gradient-glass backdrop-blur-glass border border-glass-border rounded-xl p-6 hover:shadow-lg hover:shadow-gray-500/10 transition-all duration-300 hover:scale-105 cursor-pointer">
       {/* List Header */}
         <div className="flex items-center justify-between mb-4">
@@ -173,7 +174,7 @@ function ListCard({ list, editList, deleteList }) {
         </div>
 
         {/* Tasks Container with Link */}
-        <Link to={`/app/lists/${list.id}`} className="block">
+        
           <div className="relative">
             {/* Tasks List */}
             <div className="min-h-[160px] space-y-2 px-1 py-2 flex flex-col">
@@ -203,7 +204,7 @@ function ListCard({ list, editList, deleteList }) {
               )}
             </div>
           </div>
-        </Link>
+
 
         <div className="flex items-center justify-between mt-2">
           <p className='text-text-secondary text-xs'>{tasks.length} tasks</p>
@@ -212,7 +213,7 @@ function ListCard({ list, editList, deleteList }) {
       {/* Hover overlay effect */}
         <div className="absolute inset-0 bg-gradient-gray opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none"></div>
       </div>
-
+      </Link>
       {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import connectDB from './config/DB.js';
+import { initializeSocket } from './config/socket.js';
 import authRoutes from './routes/authRoutes.js';
 import listRoutes from './routes/listRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
@@ -62,9 +64,14 @@ if (!PORT) {
   process.exit(1);
 }
 
-app.listen(PORT, () => {
+// Create HTTP server and initialize Socket.IO
+const server = createServer(app);
+const io = initializeSocket(server);
+
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🔌 WebSocket server initialized`);
   
   // Use environment variable for health check URL
   if (process.env.SERVER_URL) {

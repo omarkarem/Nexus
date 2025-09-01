@@ -85,9 +85,13 @@ const Task = ({ task, toggleTaskComplete, boardId, updateTaskTitle, deleteTask, 
     };
 
 
+    // If ghosting, render nothing (completely remove from DOM)
+    if (isGhosting) {
+        return <div style={{ height: '0px', padding: '0px', margin: '0px', opacity: 0 }}></div>;
+    }
+
     return (
-        <div className="group p-4 bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl hover:bg-gradient-glass transition-all duration-200"
-             style={{ opacity: isGhosting ? 0 : 1, transition: 'opacity 0.1s' }}>
+        <div className="group p-4 bg-glass-bg backdrop-blur-glass border border-glass-border rounded-xl hover:bg-gradient-glass transition-all duration-200">
             {/* Main task row */}
             <div className="flex items-center justify-between">
                 {/* Left side: Checkbox + Title */}

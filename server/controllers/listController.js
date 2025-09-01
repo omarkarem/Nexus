@@ -1,6 +1,7 @@
 import List from '../models/List.js';
 import Task from '../models/Task.js';
 import { uploadToS3, deleteFromS3 } from '../config/s3.js';
+import { emitToUser, SOCKET_EVENTS } from '../config/socket.js';
 
 // @desc    Get all lists for the current user
 // @route   GET /api/lists
@@ -158,6 +159,11 @@ const createList = async (req, res) => {
 
     console.log('📤 Sending response:', responseList);
 
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.LIST_CREATED, {
+      list: responseList
+    });
+
     res.status(201).json({
       success: true,
       message: 'List created successfully',
@@ -235,20 +241,27 @@ const updateList = async (req,res) => {
         if (color !== undefined) list.color = color;
         if (newImageUrl !== list.imageUrl) list.imageUrl = newImageUrl;
     
-        await list.save();
-    
-        res.json({
-          success: true,
-          message: 'List updated successfully',
-          list: {
-            id: list._id,
-            title: list.title,
-            description: list.description,
-            color: list.color,
-            imageUrl: list.imageUrl,
-            updatedAt: list.formattedUpdatedAt
-          }
-        });
+            await list.save();
+
+    const updatedList = {
+      id: list._id,
+      title: list.title,
+      description: list.description,
+      color: list.color,
+      imageUrl: list.imageUrl,
+      updatedAt: list.formattedUpdatedAt
+    };
+
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.LIST_UPDATED, {
+      list: updatedList
+    });
+
+    res.json({
+      success: true,
+      message: 'List updated successfully',
+      list: updatedList
+    });
     } catch (error) {
         res.status(500).json({message:'Failed to update list', error: error.message});
     }
@@ -287,13 +300,18 @@ const deleteList = async (req,res) => {
           // Delete all tasks in this list
           await Task.deleteMany({ list: list._id });
       
-          // Delete the list
-          await List.findByIdAndDelete(list._id);
-      
-          res.json({
-            success: true,
-            message: 'List and all its tasks deleted successfully'
-          });
+                  // Delete the list
+        await List.findByIdAndDelete(list._id);
+
+        // Emit WebSocket event for real-time updates
+        emitToUser(req.user.id, SOCKET_EVENTS.LIST_DELETED, {
+          listId: list._id
+        });
+
+        res.json({
+          success: true,
+          message: 'List and all its tasks deleted successfully'
+        });
     } catch (error) {
         res.status(500).json({message:'Failed to delete list', error: error.message});
     }

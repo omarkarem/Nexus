@@ -13,13 +13,15 @@ const validateAWSConfig = () => {
   
   if (missing.length > 0) {
     console.error('❌ Missing AWS environment variables:', missing);
-    console.error('Please check your .env file contains all required AWS_* variables');
+    console.error('Please check your Vercel environment variables contain all required AWS_* variables');
+    console.error('Available env vars:', Object.keys(process.env).filter(key => key.startsWith('AWS')));
     throw new Error(`Missing AWS environment variables: ${missing.join(', ')}`);
   }
   
   console.log('✅ AWS environment variables loaded successfully');
   console.log(`📍 Region: ${process.env.AWS_REGION}`);
   console.log(`🪣 Bucket: ${process.env.AWS_BUCKET_NAME}`);
+  console.log(`🔑 Access Key ID: ${process.env.AWS_ACCESS_KEY_ID?.substring(0, 4)}****`);
 };
 
 // Get or create S3 client (lazy initialization)

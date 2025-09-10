@@ -93,7 +93,10 @@ export const getIO = () => {
 export const emitToUser = (userId, event, data) => {
   if (io) {
     console.log(`📡 Emitting ${event} to user ${userId}:`, data);
+    console.log(`📡 Active connections in room user:${userId}:`, io.sockets.adapter.rooms.get(`user:${userId}`)?.size || 0);
     io.to(`user:${userId}`).emit(event, data);
+  } else {
+    console.error('❌ Socket.IO not initialized, cannot emit event:', event);
   }
 };
 

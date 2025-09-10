@@ -66,6 +66,9 @@ const useSocket = (user, eventHandlers = {}) => {
       console.log('✅ Socket ID:', socket.id);
       console.log('✅ Socket connected:', socket.connected);
       isConnectedRef.current = true;
+      
+      // Test connection by emitting a ping
+      socket.emit('ping', { message: 'Connection test', timestamp: Date.now() });
     });
 
     socket.on('disconnect', (reason) => {

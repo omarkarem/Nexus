@@ -22,7 +22,10 @@ const useListData = () => {
   const [error, setError] = useState(null);
   
   // Get user info from localStorage for socket authentication
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = {
+    ...JSON.parse(localStorage.getItem('user') || '{}'),
+    token: localStorage.getItem('token')
+  };
 
   // WebSocket event handlers for real-time updates
   const socketEventHandlers = {

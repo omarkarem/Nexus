@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import List from '../models/List.js';
+import { emitToUser, SOCKET_EVENTS } from '../config/socket.js';
 
 /**
  * Get all tasks for a specific list
@@ -103,6 +104,12 @@ const createTask = async (req, res) => {
       subTasks: task.subTasks
     };
 
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_CREATED, {
+      task: formattedTask,
+      listId: listId
+    });
+
     res.status(201).json({
       success: true,
       message: 'Task created successfully',
@@ -167,6 +174,11 @@ const updateTask = async (req, res) => {
       }))
     };
 
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_UPDATED, {
+      task: formattedTask
+    });
+
     res.status(200).json({
       success: true,
       message: 'Task updated successfully',
@@ -197,6 +209,11 @@ const deleteTask = async (req, res) => {
         message: 'Task not found'
       });
     }
+
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_DELETED, {
+      taskId: taskId
+    });
 
     res.status(200).json({
       success: true,
@@ -258,6 +275,11 @@ const moveTask = async (req, res) => {
       }))
     };
 
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_MOVED, {
+      task: formattedTask
+    });
+
     res.status(200).json({
       success: true,
       message: 'Task moved successfully',
@@ -299,6 +321,12 @@ const reorderTasks = async (req, res) => {
     }
 
     console.log('✅ Tasks reordered successfully');
+
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_REORDERED, {
+      tasks: tasks,
+      type: 'regular'
+    });
 
     res.status(200).json({
       success: true,
@@ -348,6 +376,16 @@ const addSubTask = async (req, res) => {
 
     // Get the newly added subtask
     const newSubTask = task.subTasks[task.subTasks.length - 1];
+
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.SUBTASK_CREATED, {
+      taskId: taskId,
+      subTask: {
+        id: newSubTask._id,
+        title: newSubTask.title,
+        completed: newSubTask.completed
+      }
+    });
 
     res.status(201).json({
       success: true,
@@ -400,6 +438,16 @@ const updateSubTask = async (req, res) => {
 
     await task.save();
 
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.SUBTASK_UPDATED, {
+      taskId: taskId,
+      subTask: {
+        id: subTask._id,
+        title: subTask.title,
+        completed: subTask.completed
+      }
+    });
+
     res.status(200).json({
       success: true,
       message: 'Subtask updated successfully',
@@ -446,6 +494,12 @@ const deleteSubTask = async (req, res) => {
 
     subTask.deleteOne();
     await task.save();
+
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.SUBTASK_DELETED, {
+      taskId: taskId,
+      subTaskId: subTaskId
+    });
 
     res.status(200).json({
       success: true,
@@ -559,6 +613,13 @@ const reorderTasksAllLists = async (req, res) => {
     }
     
     console.log('✅ All Lists order updated successfully');
+    
+    // Emit WebSocket event for real-time updates
+    emitToUser(req.user.id, SOCKET_EVENTS.TASK_REORDERED, {
+      tasks: tasks,
+      type: 'allLists'
+    });
+    
     res.status(200).json({ success: true, message: 'All Lists order updated successfully' });
   } catch (error) {
     console.error('Error reordering All Lists tasks:', error);
@@ -600,6 +661,14 @@ const deleteAllCompletedTasks = async (req, res) => {
     }
 
     console.log(`✅ [PERF-${requestId}] Deleted ${result.deletedCount} completed tasks in ${Date.now() - startTime}ms`);
+
+    // Emit WebSocket event for real-time updates
+    const isAllLists = list && (list.isAllLists || list.title === 'All Lists');
+    emitToUser(req.user.id, SOCKET_EVENTS.TASKS_DELETED_BULK, {
+      listId: listId,
+      isAllLists: isAllLists,
+      deletedCount: result.deletedCount
+    });
 
     res.status(200).json({
       success: true,

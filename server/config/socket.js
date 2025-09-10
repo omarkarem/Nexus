@@ -9,12 +9,17 @@ let io;
  * @param {Object} server - HTTP server instance
  */
 export const initializeSocket = (server) => {
+  // Configure CORS for WebSocket connections
+  const corsOrigin = process.env.CLIENT_URL || "*";
+  console.log('🔌 WebSocket CORS origin:', corsOrigin);
+  
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL,
+      origin: corsOrigin,
       credentials: true,
       methods: ["GET", "POST"]
-    }
+    },
+    transports: ['websocket', 'polling']
   });
 
   // Authentication middleware for Socket.IO

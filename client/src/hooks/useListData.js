@@ -88,7 +88,8 @@ const useListData = () => {
     },
 
     [SOCKET_EVENTS.TASK_MOVED]: (data) => {
-      console.log('📨 Task moved via WebSocket:', data);
+      console.log('🔥 TASK_MOVED WebSocket event received:', data);
+      console.log('🔥 Current lists state:', lists.length, 'lists');
       const { task } = data;
       
       setLists(prevLists =>

@@ -42,10 +42,12 @@ const useSocket = (user, eventHandlers = {}) => {
       return;
     }
 
-    console.log('🔌 Initializing WebSocket connection...');
+    const serverUrl = process.env.REACT_APP_SERVER_URL || process.env.REACT_APP_API_URL || 'http://localhost:4000';
+    console.log('🔌 Initializing WebSocket connection to:', serverUrl);
+    console.log('🔌 User token:', user.token ? 'Present' : 'Missing');
 
     // Create socket connection
-    socketRef.current = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:5000', {
+    socketRef.current = io(serverUrl, {
       auth: {
         token: user.token
       },
@@ -60,17 +62,22 @@ const useSocket = (user, eventHandlers = {}) => {
 
     // Connection events
     socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', socket.id);
+      console.log('✅ WebSocket connected to:', serverUrl);
+      console.log('✅ Socket ID:', socket.id);
+      console.log('✅ Socket connected:', socket.connected);
       isConnectedRef.current = true;
     });
 
     socket.on('disconnect', (reason) => {
       console.log('❌ WebSocket disconnected:', reason);
+      console.log('❌ Server URL was:', serverUrl);
       isConnectedRef.current = false;
     });
 
     socket.on('connect_error', (error) => {
       console.error('🔌 WebSocket connection error:', error);
+      console.error('🔌 Attempted URL:', serverUrl);
+      console.error('🔌 Error details:', error.message);
       isConnectedRef.current = false;
     });
 
@@ -79,7 +86,7 @@ const useSocket = (user, eventHandlers = {}) => {
       if (typeof handler === 'function') {
         console.log(`📡 Registering handler for event: ${event}`);
         socket.on(event, (data) => {
-          console.log(`📨 Received ${event}:`, data);
+          console.log(`📨 Received WebSocket event ${event}:`, data);
           handler(data);
         });
       }
@@ -112,7 +119,8 @@ const useSocket = (user, eventHandlers = {}) => {
     Object.entries(eventHandlers).forEach(([event, handler]) => {
       if (typeof handler === 'function') {
         socket.on(event, (data) => {
-          console.log(`📨 Received ${event}:`, data);
+          console.log(`📨 Received WebSocket event ${event}:`, data);
+          console.log(`📨 Event handler exists:`, typeof handler === 'function');
           handler(data);
         });
       }

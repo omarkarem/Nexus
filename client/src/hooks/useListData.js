@@ -591,79 +591,12 @@ const useListData = () => {
     try {
       console.log('🔄 Adding task:', { taskTitle, boardId, targetListId });
       
-      // Create optimistic task entry for instant feedback
-      const optimisticTask = {
-        id: 'temp-' + Date.now(),
-        title: taskTitle,
-        board: boardId,
-        completed: boardId === 'Done',
-        note: '',
-        order: 0,
-        allListsOrder: 0,
-        subTasks: [],
-        list: targetListId,
-        listId: targetListId,
-        isOptimistic: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Simple API call - WebSocket will handle UI updates
+      await apiCreateTask(taskTitle, boardId, targetListId);
       
-      // Get target list info for All Lists view
-      const targetList = lists.find(l => l.id === targetListId);
-      const taskWithListInfo = {
-        ...optimisticTask,
-        listInfo: targetList ? {
-          id: targetList.id,
-          title: targetList.title,
-          color: targetList.color,
-          imageUrl: targetList.imageUrl
-        } : null
-      };
-      
-      // Add optimistic task immediately
-      setLists(prevLists =>
-        prevLists.map(list => {
-          if (list.id === targetListId) {
-            return {
-              ...list,
-              tasks: [...list.tasks, optimisticTask]
-            };
-          } else if (list.isAllLists || list.title === 'All Lists') {
-            return {
-              ...list,
-              tasks: [...list.tasks, taskWithListInfo]
-            };
-          }
-          return list;
-        })
-      );
-      
-      // Make API call
-      const newTask = await apiCreateTask(taskTitle, boardId, targetListId);
-      
-      if (newTask) {
-        // Replace optimistic task with real one
-        setLists(prevLists =>
-          prevLists.map(list => ({
-            ...list,
-            tasks: list.tasks.map(task =>
-              task.id === optimisticTask.id
-                ? { ...newTask, listInfo: task.listInfo } // Preserve listInfo for All Lists
-                : task
-            )
-          }))
-        );
-      }
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('❌ Error adding task:', error);
       setError('Failed to add task');
-      // Remove the optimistic task on error
-      setLists(prevLists =>
-        prevLists.map(list => ({
-          ...list,
-          tasks: list.tasks.filter(task => !task.isOptimistic)
-        }))
-      );
     }
   };
 
@@ -698,66 +631,12 @@ const useListData = () => {
     try {
       console.log('🔄 Adding subtask:', { taskId, subTaskTitle });
       
-      // Create optimistic subtask entry for instant feedback
-      const optimisticSubTask = {
-        id: 'temp-' + Date.now(),
-        title: subTaskTitle,
-        completed: false,
-        isOptimistic: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Simple API call - WebSocket will handle UI updates
+      await apiAddSubTask(taskId, subTaskTitle);
       
-      // Add optimistic subtask immediately
-      setLists(prevLists =>
-        prevLists.map(list => ({
-          ...list,
-          tasks: list.tasks.map(task =>
-            task.id === taskId
-              ? { ...task, subTasks: [...(task.subTasks || []), optimisticSubTask] }
-              : task
-          )
-        }))
-      );
-      
-      // Make API call
-      const newSubTask = await apiAddSubTask(taskId, subTaskTitle);
-      
-      if (newSubTask) {
-        // Replace optimistic subtask with real one
-        setLists(prevLists =>
-          prevLists.map(list => ({
-            ...list,
-            tasks: list.tasks.map(task =>
-              task.id === taskId
-                ? {
-                    ...task,
-                    subTasks: task.subTasks?.map(st =>
-                      st.id === optimisticSubTask.id ? newSubTask : st
-                    )
-                  }
-                : task
-            )
-          }))
-        );
-      }
     } catch (error) {
-      console.error('Error adding subtask:', error);
+      console.error('❌ Error adding subtask:', error);
       setError('Failed to add subtask');
-      // Remove the optimistic subtask on error
-      setLists(prevLists =>
-        prevLists.map(list => ({
-          ...list,
-          tasks: list.tasks.map(task =>
-            task.id === taskId
-              ? {
-                  ...task,
-                  subTasks: task.subTasks?.filter(st => !st.isOptimistic)
-                }
-              : task
-          )
-        }))
-      );
     }
   };
 
